@@ -3667,6 +3667,7 @@ static void dsi_panel_setup_vm_ops(struct dsi_panel *panel, bool trusted_vm_env)
 		panel->panel_ops.parse_power_cfg = dsi_panel_parse_power_cfg;
 		panel->panel_ops.trigger_esd_attack = dsi_panel_trigger_esd_attack;
 	}
+}
 static int dsi_panel_parse_mot_panel_config(struct dsi_panel *panel,
 					struct device_node *of_node)
 {
@@ -3718,7 +3719,6 @@ static int dsi_panel_get_pwr_mode(struct dsi_panel *panel, u8 *val)
 
 	cmd.msg.type = MIPI_DSI_DCS_READ;
 	cmd.last_command = 1;
-	cmd.msg.flags = MIPI_DSI_MSG_LASTCOMMAND;
 	cmd.msg.channel = 0;
 
 	cmd.msg.tx_len = 1;
@@ -4965,6 +4965,7 @@ int dsi_panel_enable(struct dsi_panel *panel)
 {
 	int rc = 0;
 	u8 pwr_mode;
+	static int panel_recovery_retry;
 
 	if (!panel) {
 		DSI_ERR("Invalid params\n");
@@ -5008,9 +5009,19 @@ int dsi_panel_enable(struct dsi_panel *panel)
 		if (pwr_mode != panel->disp_on_chk_val) {
 			DSI_ERR("%s: Read Pwr_mode=0%x is not matched with expected value =0x%x\n",
 				__func__, pwr_mode, panel->disp_on_chk_val);
+
+			if (panel_recovery_retry++ > 5) {
+				DSI_ERR("%s: panel recovery failed for all retries",
+					__func__);
+
+				BUG();
+			}
+
 			dsi_panel_trigger_panel_dead_event(panel);
-		} else
+		} else {
 			DSI_INFO("-. Pwr_mode(0x0A) = 0x%x\n", pwr_mode);
+			panel_recovery_retry = 0;
+		}
 	} else
 		DSI_INFO("-: no_panel_on_read_support is set\n");
 

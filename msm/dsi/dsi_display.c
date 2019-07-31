@@ -860,7 +860,7 @@ int dsi_display_cmd_mipi_transfer(struct dsi_display *display,
 	}
 
 	flags |= DSI_CTRL_CMD_FETCH_MEMORY | DSI_CTRL_CMD_CUSTOM_DMA_SCHED;
-	rc = dsi_ctrl_cmd_transfer(m_ctrl->ctrl, msg, &flags);
+	//rc = dsi_ctrl_cmd_transfer(m_ctrl->ctrl, &flags);
 	if (((flags & DSI_CTRL_CMD_READ) && rc <= 0) ||
 		(!(flags & DSI_CTRL_CMD_READ) && rc))
 		DSI_ERR("failed to transfer cmd. rc = %d\n", rc);
