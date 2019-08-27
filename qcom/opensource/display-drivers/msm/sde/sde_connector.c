@@ -1848,6 +1848,15 @@ static int sde_connector_atomic_set_property(struct drm_connector *connector,
 		if (rc)
 			goto end;
 		break;
+	case CONNECTOR_PROP_ACL:
+		param_info.value = sde_connector_get_property(
+				connector->state, CONNECTOR_PROP_ACL);
+		param_info.param_idx = PARAM_ACL_ID;
+		param_info.param_conn_idx = CONNECTOR_PROP_ACL;
+		rc = _sde_connector_update_param(c_conn, &param_info);
+		if (rc)
+			goto end;
+		break;
 	case CONNECTOR_PROP_DYN_TRANSFER_TIME:
 		_sde_connector_set_prop_dyn_transfer_time(c_conn, val);
 		break;
@@ -1855,7 +1864,7 @@ static int sde_connector_atomic_set_property(struct drm_connector *connector,
 		/* suspend case: clear stale MISR */
 		if (val == SDE_MODE_DPMS_OFF)
 			memset(&c_conn->previous_misr_sign, 0, sizeof(struct sde_misr_sign));
-		break;
+
 	default:
 		break;
 	}
@@ -3022,6 +3031,8 @@ static int sde_connector_install_panel_params(struct sde_connector *c_conn)
 
 		if (!strncmp(param_cmds->param_name, "HBM", 3))
 			prop_idx = CONNECTOR_PROP_HBM;
+		else if (!strncmp(param_cmds->param_name, "ACL", 3))
+			prop_idx = CONNECTOR_PROP_ACL;
 		else {
 			SDE_ERROR("Invalid param_name =%s\n",
 						param_cmds->param_name);
