@@ -234,8 +234,9 @@ struct dsi_panel_spr_info {
 };
 
 enum panel_idx {
-        MAIN_IDX = 0,
-        PANEL_IDX_MAX,
+	MAIN_IDX = 0,
+	SEC_INX,
+	PANEL_IDX_MAX,
 };
 
 enum acl_state {
@@ -411,7 +412,8 @@ struct dsi_panel *dsi_panel_get(struct device *parent,
 				struct device_node *parser_node,
 				const char *type,
 				int topology_override,
-				bool trusted_vm_env);
+				bool trusted_vm_env,
+				u32 panel_idx);
 
 void dsi_panel_put(struct dsi_panel *panel);
 
