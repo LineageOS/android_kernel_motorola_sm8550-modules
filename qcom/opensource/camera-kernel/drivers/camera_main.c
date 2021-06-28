@@ -181,6 +181,12 @@ static const struct camera_submodule_component camera_presil[] = {
 #endif
 };
 
+static const struct camera_submodule_component camera_cci_debug[] = {
+#ifdef CONFIG_CCI_DEBUG_INTF
+	{&cam_cci_debug_sub_module_init, &cam_cci_debug_sub_module_exit},
+#endif
+};
+
 static const struct camera_submodule submodule_table[] = {
 	{
 		.name = "Camera BASE",
@@ -241,6 +247,11 @@ static const struct camera_submodule submodule_table[] = {
 		.name = "Camera Presil",
 		.num_component = ARRAY_SIZE(camera_presil),
 		.component = camera_presil,
+	},
+	{
+		.name = "Camera CCI Debug",
+		.num_component = ARRAY_SIZE(camera_cci_debug),
+		.component = camera_cci_debug,
 	}
 };
 
