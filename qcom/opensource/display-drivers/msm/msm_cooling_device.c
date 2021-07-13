@@ -63,6 +63,8 @@ struct sde_cdev *backlight_cdev_register(struct device *dev,
 
 	if (!dev || !bd || !n)
 		return ERR_PTR(-EINVAL);
+	if (of_find_property(dev->of_node, "delete-cooling-cells", NULL))
+		return ERR_PTR(-ENODEV);
 	if (!of_find_property(dev->of_node, "#cooling-cells", NULL))
 		return ERR_PTR(-ENODEV);
 
