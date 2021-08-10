@@ -6471,6 +6471,147 @@ static void dsi_display_firmware_display(const struct firmware *fw,
 	DSI_DEBUG("success\n");
 }
 
+
+// Add panel info node
+static ssize_t panelId_show(struct device *device,
+	struct device_attribute *attr, char *buf)
+{
+	struct drm_connector *conn;
+	struct sde_connector *sde_conn;
+	struct dsi_display *dsi_display;
+
+	if (!device || !buf) {
+		SDE_ERROR("invalid input param(s)\n");
+		return -EAGAIN;
+	}
+
+	conn = dev_get_drvdata(device);
+	sde_conn = to_sde_connector(conn);
+	dsi_display = sde_conn->display;
+
+	if (sde_conn->connector_type == DRM_MODE_CONNECTOR_DSI)
+	    return scnprintf(buf, PAGE_SIZE, "0x%016llx\n", dsi_display->panel->panel_id);
+	else
+	    return scnprintf(buf, PAGE_SIZE, "%s\n", "Not a DSI panel");
+}
+
+static ssize_t panelName_show(struct device *device,
+	struct device_attribute *attr, char *buf)
+{
+	struct drm_connector *conn;
+	struct sde_connector *sde_conn;
+	struct dsi_display *dsi_display;
+
+	if (!device || !buf) {
+		SDE_ERROR("invalid input param(s)\n");
+		return -EAGAIN;
+	}
+
+	conn = dev_get_drvdata(device);
+	sde_conn = to_sde_connector(conn);
+	dsi_display = sde_conn->display;
+
+	if (sde_conn->connector_type == DRM_MODE_CONNECTOR_DSI)
+	    return scnprintf(buf, PAGE_SIZE, "%s\n", dsi_display->panel->panel_name);
+	else
+	    return scnprintf(buf, PAGE_SIZE, "%s\n", "Not a DSI panel");
+}
+
+static ssize_t panelVer_show(struct device *device,
+	struct device_attribute *attr, char *buf)
+{
+	struct drm_connector *conn;
+	struct sde_connector *sde_conn;
+	struct dsi_display *dsi_display;
+
+	if (!device || !buf) {
+		SDE_ERROR("invalid input param(s)\n");
+		return -EAGAIN;
+	}
+
+	conn = dev_get_drvdata(device);
+	sde_conn = to_sde_connector(conn);
+	dsi_display = sde_conn->display;
+
+	if (sde_conn->connector_type == DRM_MODE_CONNECTOR_DSI)
+	    return scnprintf(buf, PAGE_SIZE, "0x%016llx\n", dsi_display->panel->panel_ver);
+	else
+	    return scnprintf(buf, PAGE_SIZE, "%s\n", "Not a DSI panel");
+}
+
+static ssize_t panelRegDA_show(struct device *device,
+	struct device_attribute *attr, char *buf)
+{
+	struct drm_connector *conn;
+	struct sde_connector *sde_conn;
+	struct dsi_display *dsi_display;
+
+	if (!device || !buf) {
+		SDE_ERROR("invalid input param(s)\n");
+		return -EAGAIN;
+	}
+
+	conn = dev_get_drvdata(device);
+	sde_conn = to_sde_connector(conn);
+	dsi_display = sde_conn->display;
+
+	if (sde_conn->connector_type == DRM_MODE_CONNECTOR_DSI)
+	    return scnprintf(buf, PAGE_SIZE, "0x%02x\n", dsi_display->panel->panel_regDA);
+	else
+	    return scnprintf(buf, PAGE_SIZE, "%s\n", "Not a DSI panel");
+}
+
+static ssize_t panelSupplier_show(struct device *device,
+	struct device_attribute *attr, char *buf)
+{
+	struct drm_connector *conn;
+	struct sde_connector *sde_conn;
+	struct dsi_display *dsi_display;
+
+	if (!device || !buf) {
+		SDE_ERROR("invalid input param(s)\n");
+		return -EAGAIN;
+	}
+
+	conn = dev_get_drvdata(device);
+	sde_conn = to_sde_connector(conn);
+	dsi_display = sde_conn->display;
+
+	if (sde_conn->connector_type == DRM_MODE_CONNECTOR_DSI)
+	    return scnprintf(buf, PAGE_SIZE, "%s\n", dsi_display->panel->panel_supplier);
+	else
+	    return scnprintf(buf, PAGE_SIZE, "%s\n", "Not a DSI panel");
+}
+
+static DEVICE_ATTR_RO(panelId);
+static DEVICE_ATTR_RO(panelVer);
+static DEVICE_ATTR_RO(panelName);
+static DEVICE_ATTR_RO(panelRegDA);
+static DEVICE_ATTR_RO(panelSupplier);
+
+static const struct attribute *sde_conn_panel_attrs[] = {
+	&dev_attr_panelId.attr,
+	&dev_attr_panelVer.attr,
+	&dev_attr_panelName.attr,
+	&dev_attr_panelRegDA.attr,
+	&dev_attr_panelSupplier.attr,
+	NULL
+};
+
+int moto_panel_sysfs_add(struct dsi_display *display)
+{
+	int ret;
+	if (!display || !display->drm_conn || !display->drm_conn->kdev) {
+		DSI_ERR("Invalid params\n");
+		return -EINVAL;
+	}
+
+	ret = sysfs_create_files(&display->drm_conn->kdev->kobj, sde_conn_panel_attrs);
+
+	return ret;
+}
+
+
 int dsi_display_dev_probe(struct platform_device *pdev)
 {
 	struct dsi_display *display = NULL;
@@ -6580,6 +6721,8 @@ int dsi_display_dev_probe(struct platform_device *pdev)
 		if (rc)
 			goto end;
 	}
+
+	moto_panel_sysfs_add(display);
 
 	return 0;
 end:
