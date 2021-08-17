@@ -50,7 +50,7 @@ ifeq ($(CONFIG_ARCH_PARROT), y)
 include $(CAMERA_KERNEL_ROOT)/config/parrot.mk
 endif 
 
-ifneq (,$(filter hiphic hiphi, $(TARGET_PRODUCT)))
+ifneq (,$(filter hiphic hiphi hiphic_factory hiphi_factory, $(TARGET_PRODUCT)))
 include $(CAMERA_KERNEL_ROOT)/config/hiphi.mk
 endif
 
