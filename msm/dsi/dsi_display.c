@@ -22,6 +22,7 @@
 #include "dsi_pwr.h"
 #include "sde_dbg.h"
 #include "dsi_parser.h"
+#include "dsi_display_mot_ext.h"
 
 #define to_dsi_display(x) container_of(x, struct dsi_display, host)
 #define INT_BASE_10 10
@@ -6723,6 +6724,7 @@ int dsi_display_dev_probe(struct platform_device *pdev)
 	}
 
 	moto_panel_sysfs_add(display);
+	dsi_display_ext_init(display);
 
 	return 0;
 end:
