@@ -478,7 +478,7 @@ error_exit:
 	return false;
 }
 
-#define PARAM_READ_FILE 1
+#define PARAM_READ_FILE 0
 bool dsi_panel_mot_parse_timing_from_file(struct dsi_display *display, int index)
 {
 	bool ret = false;
@@ -492,10 +492,10 @@ bool dsi_panel_mot_parse_timing_from_file(struct dsi_display *display, int index
 	char * pline = NULL;
 	char * plinebuf = NULL;
 	char * plineEnd = NULL;
-	struct firmware *fw = NULL;
+	const struct firmware *fw = NULL;
 	int rate_cont = 0;
-#if PARAM_READ_FILE
 	char file_path[255] = { 0 };
+#if PARAM_READ_FILE
 	struct file *filp = NULL;
 	struct inode *inode;
 	mm_segment_t old_fs;
@@ -541,12 +541,13 @@ bool dsi_panel_mot_parse_timing_from_file(struct dsi_display *display, int index
        fw->data = fwbuf;
 #else
 
-	rc = request_firmware(&fw, "lcd-paras.txt", &display->pdev->dev);//
+	snprintf(file_path, 255, "%s.txt", display->panel->name);
+	rc = request_firmware(&fw, file_path, &display->pdev->dev);//
 	if (rc < 0) {
-		dev_warn_once(&display->pdev->dev, "Request firmware failed - /sdcard/lcd-paras.txt (%d)\n", rc);
+		dev_warn_once(&display->pdev->dev, "Request firmware failed - /data/vendor/param/firmware/%s (%d)\n", file_path, rc);
 		return ret;
 	}
-	pr_info("found LCD para debug file, length: %d !, panel has %d timing modes\n", fw->size, display->panel->num_display_modes);
+	pr_info("found /data/vendor/param/firmware/%s, size=%d, with %d timing modes\n", file_path, fw->size, display->panel->num_display_modes);
 
 	if (fw->size < 8 || fw->size > 65536) {
 		dev_warn_once(&display->pdev->dev, "Invalid firmware size (%zu)\n", fw->size);
