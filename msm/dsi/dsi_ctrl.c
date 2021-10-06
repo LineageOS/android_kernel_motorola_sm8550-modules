@@ -2952,6 +2952,20 @@ void dsi_ctrl_enable_status_interrupt(struct dsi_ctrl *dsi_ctrl,
 
 	spin_lock_irqsave(&dsi_ctrl->irq_info.irq_lock, flags);
 
+	if (intr_idx == DSI_SINT_CMD_MODE_DMA_DONE) {
+		if (dsi_ctrl->irq_info.irq_stat_refcount[intr_idx]) {
+			dsi_ctrl->refcount_non_zero++;
+			SDE_EVT32(dsi_ctrl->refcount_non_zero);
+			if (dsi_ctrl->refcount_non_zero == 3) {
+				DSI_CTRL_ERR(dsi_ctrl, "refcount_non_zero %d\n",
+					dsi_ctrl->refcount_non_zero);
+				SDE_DBG_DUMP(SDE_DBG_BUILT_IN_ALL, "panic");
+			}
+		} else {
+			dsi_ctrl->refcount_non_zero = 0;
+		}
+	}
+
 	if (dsi_ctrl->irq_info.irq_stat_refcount[intr_idx] == 0) {
 		/* enable irq on first request */
 		if (dsi_ctrl->irq_info.irq_stat_mask == 0)
