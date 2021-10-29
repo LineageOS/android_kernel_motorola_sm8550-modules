@@ -998,10 +998,9 @@ int cam_sensor_match_id(struct cam_sensor_ctrl_t *s_ctrl)
 			matched = true;
 
 		if (!matched && !retries) {
-			CAM_WARN(CAM_SENSOR, "Failed %s read id: 0x%x expected id 0x%x:",
+			CAM_ERR(CAM_SENSOR, "Failed %s read id: 0x%x expected id 0x%x:",
 					s_ctrl->sensor_name, chipid,
 					slave_info->sensor_id);
-			BUG();
 		}
 	}
 #else
