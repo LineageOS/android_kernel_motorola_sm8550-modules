@@ -1021,7 +1021,9 @@ static int dsi_panel_set_hbm(struct dsi_panel *panel,
 	if (rc < 0) {
 		DSI_ERR("%s: failed to send param cmds. ret=%d\n", __func__, rc);
 	} else {
+		mutex_lock(&panel->panel_lock);
 		rc = dsi_panel_set_backlight(panel, HBM_BRIGHTNESS(param_info->value));
+		mutex_unlock(&panel->panel_lock);
 		if (rc)
 			DSI_ERR("unable to set backlight\n");
 	}
