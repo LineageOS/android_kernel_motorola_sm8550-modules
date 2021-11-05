@@ -228,6 +228,7 @@ struct dp_parser {
 	bool dsc_continuous_pps;
 	bool has_widebus;
 	bool gpio_aux_switch;
+	bool typec_bridge;
 	u32 mst_fixed_port[MAX_DP_MST_STREAMS];
 	u32 qos_cpu_mask;
 	unsigned long qos_cpu_latency;
