@@ -110,7 +110,7 @@ static void dp_altmode_send_pan_ack(struct altmode_client *amclient,
 		return;
 	}
 
-	DP_DEBUG("port=%d\n", port_index);
+	DP_INFO("port=%d\n", port_index);
 }
 
 static int dp_altmode_notify(void *priv, void *data, size_t len)
@@ -136,14 +136,14 @@ static int dp_altmode_notify(void *priv, void *data, size_t len)
 	altmode->dp_altmode.base.multi_func = force_multi_func ? true :
 		!(pin == DPAM_HPD_C || pin == DPAM_HPD_E || pin == DPAM_HPD_OUT);
 
-	DP_DEBUG("payload=0x%x\n", dp_data);
-	DP_DEBUG("port_index=%d, orientation=%d, pin=%d, hpd_state=%d\n",
+	DP_INFO("payload=0x%x\n", dp_data);
+	DP_INFO("port_index=%d, orientation=%d, pin=%d, hpd_state=%d\n",
 			port_index, orientation, pin, hpd_state);
-	DP_DEBUG("multi_func=%d, hpd_high=%d, hpd_irq=%d\n",
+	DP_INFO("multi_func=%d, hpd_high=%d, hpd_irq=%d\n",
 			altmode->dp_altmode.base.multi_func,
 			altmode->dp_altmode.base.hpd_high,
 			altmode->dp_altmode.base.hpd_irq);
-	DP_DEBUG("connected=%d\n", altmode->connected);
+	DP_INFO("connected=%d\n", altmode->connected);
 	SDE_EVT32_EXTERNAL(dp_data, port_index, orientation, pin, hpd_state,
 			altmode->dp_altmode.base.multi_func,
 			altmode->dp_altmode.base.hpd_high,
@@ -175,7 +175,7 @@ static int dp_altmode_notify(void *priv, void *data, size_t len)
 		if (altmode->dp_altmode.base.multi_func)
 			altmode->lanes = 2;
 
-		DP_DEBUG("Connected=%d, lanes=%d\n",altmode->connected,altmode->lanes);
+		DP_INFO("Connected=%d, lanes=%d\n",altmode->connected,altmode->lanes);
 
 		switch (orientation) {
 		case 0:
