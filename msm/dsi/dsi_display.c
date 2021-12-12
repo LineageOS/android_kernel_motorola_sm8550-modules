@@ -6584,11 +6584,34 @@ static ssize_t panelSupplier_show(struct device *device,
 	    return scnprintf(buf, PAGE_SIZE, "%s\n", "Not a DSI panel");
 }
 
+static ssize_t panelBLExponent_show(struct device *device,
+	struct device_attribute *attr, char *buf)
+{
+	struct drm_connector *conn;
+	struct sde_connector *sde_conn;
+	struct dsi_display *dsi_display;
+
+	if (!device || !buf) {
+		SDE_ERROR("invalid input param(s)\n");
+		return -EAGAIN;
+	}
+
+	conn = dev_get_drvdata(device);
+	sde_conn = to_sde_connector(conn);
+	dsi_display = sde_conn->display;
+
+	if (sde_conn->connector_type == DRM_MODE_CONNECTOR_DSI)
+	    return scnprintf(buf, PAGE_SIZE, "%d\n", dsi_display->panel->bl_config.bl_is_exponent);
+	else
+	    return scnprintf(buf, PAGE_SIZE, "%s\n", "Not a DSI panel");
+}
+
 static DEVICE_ATTR_RO(panelId);
 static DEVICE_ATTR_RO(panelVer);
 static DEVICE_ATTR_RO(panelName);
 static DEVICE_ATTR_RO(panelRegDA);
 static DEVICE_ATTR_RO(panelSupplier);
+static DEVICE_ATTR_RO(panelBLExponent);
 
 static const struct attribute *sde_conn_panel_attrs[] = {
 	&dev_attr_panelId.attr,
@@ -6596,6 +6619,7 @@ static const struct attribute *sde_conn_panel_attrs[] = {
 	&dev_attr_panelName.attr,
 	&dev_attr_panelRegDA.attr,
 	&dev_attr_panelSupplier.attr,
+	&dev_attr_panelBLExponent.attr,
 	NULL
 };
 
@@ -6603,11 +6627,15 @@ int moto_panel_sysfs_add(struct dsi_display *display)
 {
 	int ret;
 	if (!display || !display->drm_conn || !display->drm_conn->kdev) {
-		DSI_ERR("Invalid params\n");
+		DSI_WARN("drm_conn->kdev is still null\n");
 		return -EINVAL;
 	}
 
 	ret = sysfs_create_files(&display->drm_conn->kdev->kobj, sde_conn_panel_attrs);
+	dsi_display_ext_init(display);
+
+	DSI_INFO(" sysfs add done, ret\n", ret);
+	display->sysfs_add_done = true;
 
 	return ret;
 }
@@ -6722,9 +6750,6 @@ int dsi_display_dev_probe(struct platform_device *pdev)
 		if (rc)
 			goto end;
 	}
-
-	moto_panel_sysfs_add(display);
-	dsi_display_ext_init(display);
 
 	return 0;
 end:
@@ -8869,6 +8894,10 @@ int dsi_display_prepare(struct dsi_display *display)
 		DSI_ERR("no valid mode set for the display\n");
 		return -EINVAL;
 	}
+
+	//Why here: display->drm_conn->kdev become valid very late
+	if (!display->sysfs_add_done)
+		moto_panel_sysfs_add(display);
 
 	DSI_INFO("panel_name=%s ctrl-index=%d\n",
 		display->panel->name, ctrl->ctrl->cell_index);

@@ -305,6 +305,7 @@ struct dsi_display {
 	struct dsi_panel_cmd_set cmd_set;
 
 	bool enabled;
+	bool sysfs_add_done;
 };
 
 int dsi_display_dev_probe(struct platform_device *pdev);
