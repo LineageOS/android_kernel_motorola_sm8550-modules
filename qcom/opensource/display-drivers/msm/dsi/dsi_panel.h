@@ -188,6 +188,9 @@ struct dsi_backlight_config {
 
 	/* DCS params */
 	bool lp_mode;
+
+	/* Use exponent backlight curve */
+	bool bl_is_exponent;
 };
 
 struct dsi_reset_seq {
