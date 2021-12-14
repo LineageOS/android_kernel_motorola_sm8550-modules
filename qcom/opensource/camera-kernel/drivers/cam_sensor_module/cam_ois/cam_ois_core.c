@@ -858,9 +858,6 @@ static int cam_ois_pkt_parse(struct cam_ois_ctrl_t *o_ctrl, void *arg)
 			}
 		}
 
-		/* wait for power up to settle before applying settings */
-		usleep_range(5000, 5010);
-
 		rc = cam_ois_apply_settings(o_ctrl, &o_ctrl->i2c_init_data);
 		if ((rc == -EAGAIN) &&
 			(o_ctrl->io_master_info.master_type == CCI_MASTER)) {
