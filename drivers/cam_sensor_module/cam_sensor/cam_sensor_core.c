@@ -697,6 +697,14 @@ int32_t cam_sensor_update_slave_info(void *probe_info,
 
 		memcpy(s_ctrl->sensor_name, sensor_probe_info_v2->sensor_name,
 			CAM_SENSOR_NAME_MAX_SIZE-1);
+
+		s_ctrl->i2c_addr_switch           =  sensor_probe_info_v2->i2c_addr_switch;
+		s_ctrl->second_i2c_address        =  sensor_probe_info_v2->second_i2c_address;
+		s_ctrl->i2c_switch_reg_addr_Type  =  sensor_probe_info_v2->i2c_switch_reg_addr_Type;
+		s_ctrl->i2c_switch_reg_data_Type  =  sensor_probe_info_v2->i2c_switch_reg_data_Type;
+		s_ctrl->i2c_switch_reg_addr       =  sensor_probe_info_v2->i2c_switch_reg_addr;
+		s_ctrl->i2c_switch_reg_data       =  sensor_probe_info_v2->i2c_switch_reg_data;
+		s_ctrl->i2c_switch_reg_delayMs    =  sensor_probe_info_v2->i2c_switch_reg_delayMs;
 	}
 
 	CAM_DBG(CAM_SENSOR,
@@ -1083,6 +1091,51 @@ end:
 	return rc;
 }
 
+int cam_sensor_set_i2c_addr_switch_reg(struct cam_sensor_ctrl_t *s_ctrl)
+{
+	int rc = 0;
+	uint16_t sensor_address = 0;
+	struct cam_sensor_i2c_reg_setting wr_setting;
+	struct cam_sensor_i2c_reg_array reg_setting;
+
+	/* if hal doesn't config i2c_addr_switch parameter in sensor xml, return success immediately */
+	if (!s_ctrl->i2c_addr_switch) {
+		return 0;
+	}
+
+	/* save sensor i2c address */
+	sensor_address = s_ctrl->io_master_info.cci_client->sid;
+
+	/* set sub-device i2c address */
+	if (s_ctrl->second_i2c_address) {
+		s_ctrl->io_master_info.cci_client->sid = s_ctrl->second_i2c_address >> 1;
+	}
+
+	reg_setting.reg_addr = s_ctrl->i2c_switch_reg_addr;
+	reg_setting.reg_data = s_ctrl->i2c_switch_reg_data;
+	reg_setting.delay = s_ctrl->i2c_switch_reg_delayMs;
+	reg_setting.data_mask = 0;
+	wr_setting.addr_type = s_ctrl->i2c_switch_reg_addr_Type;
+	wr_setting.data_type = s_ctrl->i2c_switch_reg_data_Type;
+	wr_setting.reg_setting = &reg_setting;
+	wr_setting.size = 1;
+	wr_setting.delay = 0;
+	rc = camera_io_dev_write(&s_ctrl->io_master_info, &wr_setting);
+
+	/* restore sensor i2c address */
+	s_ctrl->io_master_info.cci_client->sid = sensor_address;
+
+	if (rc == 0) {
+		CAM_INFO(CAM_SENSOR, "write i2c addr switch reg success");
+	}
+	else {
+		CAM_ERR(CAM_SENSOR, "write i2c addr switch reg failed!!!");
+		rc = -EINVAL;
+	}
+
+	return rc;
+}
+
 int32_t cam_sensor_driver_cmd(struct cam_sensor_ctrl_t *s_ctrl,
 	void *arg)
 {
@@ -1182,6 +1235,20 @@ int32_t cam_sensor_driver_cmd(struct cam_sensor_ctrl_t *s_ctrl,
 				cam_sensor_power_down(s_ctrl);
 				goto free_power_settings;
 			}
+		}
+
+		/* load probe setting before read sensorID */
+		rc = cam_sensor_set_i2c_addr_switch_reg(s_ctrl);
+		if (rc < 0) {
+			CAM_ERR(CAM_SENSOR,
+				"set i2c addr switch reg failed for %s slot:%d, slave_addr:0x%x, sensor_id:0x%x",
+				s_ctrl->sensor_name,
+				s_ctrl->soc_info.index,
+				s_ctrl->sensordata->slave_info.sensor_slave_addr,
+				s_ctrl->sensordata->slave_info.sensor_id);
+			cam_sensor_power_down(s_ctrl);
+			msleep(20);
+			goto free_power_settings;
 		}
 
 		/* Match sensor ID */

@@ -154,6 +154,14 @@ struct cam_sensor_ctrl_t {
 	bool                           stream_off_after_eof;
 	bool                           hw_no_ops;
 	bool                           is_res_info_updated;
+	/* add i2c addr switch support*/
+	uint8_t                        i2c_addr_switch;
+	uint16_t                       second_i2c_address;
+	uint8_t                        i2c_switch_reg_addr_Type;
+	uint8_t                        i2c_switch_reg_data_Type;
+	uint16_t                       i2c_switch_reg_addr;
+	uint16_t                       i2c_switch_reg_data;
+	uint16_t                       i2c_switch_reg_delayMs;
 };
 
 /**
