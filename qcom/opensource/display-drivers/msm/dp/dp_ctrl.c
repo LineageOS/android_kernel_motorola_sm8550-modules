@@ -1416,7 +1416,7 @@ static int dp_ctrl_on(struct dp_ctrl *dp_ctrl, bool mst_mode,
 			ctrl->panel->link_info.num_lanes;
 	}
 
-	DP_DEBUG("bw_code=%d, lane_count=%d\n",
+	DP_INFO("bw_code=%d, lane_count=%d\n",
 		ctrl->link->link_params.bw_code,
 		ctrl->link->link_params.lane_count);
 

@@ -269,6 +269,7 @@ static int dp_hdcp2p2_on(void *input)
 	struct dp_hdcp2p2_ctrl *ctrl = input;
 	struct sde_hdcp_2x_wakeup_data cdata = {HDCP_2X_CMD_INVALID};
 
+	DP_INFO("\n");
 	rc = dp_hdcp2p2_valid_handle(ctrl);
 	if (rc)
 		return rc;
@@ -288,6 +289,7 @@ static void dp_hdcp2p2_off(void *input)
 	struct dp_hdcp2p2_ctrl *ctrl = (struct dp_hdcp2p2_ctrl *)input;
 	struct sde_hdcp_2x_wakeup_data cdata = {HDCP_2X_CMD_DISABLE};
 
+	DP_INFO("\n");
 	rc = dp_hdcp2p2_valid_handle(ctrl);
 	if (rc)
 		return;
@@ -462,6 +464,7 @@ static bool dp_hdcp2p2_feature_supported(void *input)
 	if (lib->feature_supported)
 		supported = lib->feature_supported(
 			ctrl->lib_ctx);
+	DP_INFO("supported = %d\n", supported);
 
 	return supported;
 }
@@ -623,6 +626,7 @@ static void dp_hdcp2p2_start_auth(struct dp_hdcp2p2_ctrl *ctrl)
 {
 	struct sde_hdcp_2x_wakeup_data cdata = {HDCP_2X_CMD_START_AUTH};
 	cdata.context = ctrl->lib_ctx;
+	DP_INFO("\n");
 
 	if (atomic_read(&ctrl->auth_state) == HDCP_STATE_AUTHENTICATING)
 		dp_hdcp2p2_wakeup_lib(ctrl, &cdata);
@@ -787,8 +791,8 @@ static bool dp_hdcp2p2_supported(void *input)
 		goto error;
 	}
 
-	DP_DEBUG("HDCP_CAPABLE=%lu\n", (buf[2] & BIT(1)) >> 1);
-	DP_DEBUG("VERSION=%d\n", buf[0]);
+	DP_INFO("HDCP_CAPABLE=%lu\n", (buf[2] & BIT(1)) >> 1);
+	DP_INFO("VERSION=%d\n", buf[0]);
 
 	if ((buf[2] & BIT(1)) && (buf[0] == 0x2))
 		return true;
