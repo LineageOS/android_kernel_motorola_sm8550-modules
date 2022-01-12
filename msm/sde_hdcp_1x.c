@@ -258,6 +258,7 @@ static int sde_hdcp_1x_enable_hdcp_engine(void *input)
 		goto end;
 	}
 
+	pr_info("\n");
 	dp_ahb = hdcp->init_data.dp_ahb;
 	dp_aux = hdcp->init_data.dp_aux;
 	dp_link = hdcp->init_data.dp_link;
@@ -1090,6 +1091,7 @@ static void sde_hdcp_1x_auth_work(struct work_struct *work)
 		rc = -EINVAL;
 		goto end;
 	}
+	pr_info("\n");
 
 	hdcp->sink_r0_ready = false;
 	hdcp->reauth = false;
@@ -1160,6 +1162,7 @@ static int sde_hdcp_1x_authenticate(void *input)
 		goto error;
 	}
 
+	pr_info("\n");
 	rc = hdcp1_start(hdcp->hdcp1_handle, &hdcp->aksv_msb, &hdcp->aksv_lsb);
 	if (rc) {
 		pr_err("hdcp1_start failed (%d)\n", rc);
@@ -1201,6 +1204,7 @@ static int sde_hdcp_1x_reauthenticate(void *input)
 		return -EINVAL;
 	}
 
+	pr_info("\n");
 	/* Disable HDCP interrupts */
 	DSS_REG_W(io, isr->int_reg, DSS_REG_R(io, isr->int_reg) & ~HDCP_INT_EN);
 
@@ -1280,7 +1284,7 @@ static void sde_hdcp_1x_off(void *input)
 	sde_hdcp_1x_authentication_ops_notify(hdcp, hdcp->hdcp_state);
 	hdcp1_stop(hdcp->hdcp1_handle);
 
-	pr_debug("%s: HDCP: Off\n", SDE_HDCP_STATE_NAME);
+	pr_info("%s: HDCP: Off\n", SDE_HDCP_STATE_NAME);
 } /* hdcp_1x_off */
 
 static int sde_hdcp_1x_isr(void *input)
@@ -1314,7 +1318,7 @@ static int sde_hdcp_1x_isr(void *input)
 		/* AUTH_SUCCESS_INT */
 		DSS_REG_W(io, isr->int_reg,
 			(hdcp_int_val | isr->auth_success_ack));
-		pr_debug("%s: AUTH SUCCESS\n", SDE_HDCP_STATE_NAME);
+		pr_info("%s: AUTH SUCCESS\n", SDE_HDCP_STATE_NAME);
 
 		if (sde_hdcp_1x_state(HDCP_STATE_AUTHENTICATING))
 			complete_all(&hdcp->r0_checked);
@@ -1327,7 +1331,7 @@ static int sde_hdcp_1x_isr(void *input)
 		DSS_REG_W(io, isr->int_reg,
 			(hdcp_int_val | isr->auth_fail_ack));
 
-		pr_debug("%s: AUTH FAIL, LINK0_STATUS=0x%08x\n",
+		pr_info("%s: AUTH FAIL, LINK0_STATUS=0x%08x\n",
 			SDE_HDCP_STATE_NAME, link_status);
 
 		if (sde_hdcp_1x_state(HDCP_STATE_AUTHENTICATED)) {
@@ -1362,7 +1366,7 @@ static int sde_hdcp_1x_isr(void *input)
 		/* Encryption enabled */
 		DSS_REG_W(io, isr->int_reg,
 			(hdcp_int_val | isr->encryption_ready_ack));
-		pr_debug("%s: encryption ready received\n",
+		pr_info("%s: encryption ready received\n",
 			SDE_HDCP_STATE_NAME);
 	}
 
@@ -1370,7 +1374,7 @@ static int sde_hdcp_1x_isr(void *input)
 		/* Encryption enabled */
 		DSS_REG_W(io, isr->int_reg,
 			(hdcp_int_val | isr->encryption_not_ready_ack));
-		pr_debug("%s: encryption not ready received\n",
+		pr_info("%s: encryption not ready received\n",
 			SDE_HDCP_STATE_NAME);
 	}
 
@@ -1390,7 +1394,7 @@ static bool sde_hdcp_1x_feature_supported(void *input)
 
 	feature_supported = hdcp1_feature_supported(hdcp->hdcp1_handle);
 
-	pr_debug("feature_supported = %d\n", feature_supported);
+	pr_info("feature_supported = %d\n", feature_supported);
 
 	return feature_supported;
 }
