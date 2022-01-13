@@ -447,6 +447,7 @@ struct cam_cmd_probe_v2 {
 	__u32    logical_camera_id;
 	char     sensor_name[CAM_SENSOR_NAME_MAX_SIZE];
 	__u32    reserved[4];
+#ifdef CONFIG_CCI_ADDR_SWITCH
 	/* add i2c addr switch support*/
 	__u8     i2c_addr_switch;
 	__u32    second_i2c_address;
@@ -455,6 +456,7 @@ struct cam_cmd_probe_v2 {
 	__u32    i2c_switch_reg_addr;
 	__u32    i2c_switch_reg_data;
 	__u32    i2c_switch_reg_delayMs;
+#endif
 } __attribute__((packed));
 
 /**
