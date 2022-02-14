@@ -347,6 +347,30 @@ static const struct v4l2_subdev_internal_ops csiphy_subdev_intern_ops = {
 	.close = cam_csiphy_subdev_close,
 };
 
+#ifdef CONFIG_CAM_CSI_CONDITIONAL_AUX
+static bool cam_csiphy_aux_setting_allowed(void) {
+	struct device_node *of_chosen;
+	const char* val;
+
+	of_chosen = of_find_node_by_path("/chosen");
+	if (of_chosen == NULL)
+		of_chosen = of_find_node_by_path("/chosen@0");
+
+	if (of_chosen == NULL)
+		return false;
+
+	if (of_property_read_string(of_chosen, "mmi,camera_disable_radio", &val)) {
+		pr_err("%s: Failed to get mmi,camera_disable_radio", __func__);
+		return false;
+	}
+
+	if (!strcmp(val, "false"))
+		return true;
+
+	return false;
+}
+#endif
+
 static int cam_csiphy_component_bind(struct device *dev,
 	struct device *master_dev, void *data)
 {
@@ -389,6 +413,12 @@ static int cam_csiphy_component_bind(struct device *dev,
 
 	if (cam_cpas_query_domain_id_security_support())
 		new_csiphy_dev->domain_id_security = true;
+#ifdef CONFIG_CAM_CSI_CONDITIONAL_AUX
+	new_csiphy_dev->aux_setting_allowed = cam_csiphy_aux_setting_allowed();
+	CAM_INFO(CAM_CSIPHY, "Aux Setting %s be applied for %s",
+		new_csiphy_dev->aux_setting_allowed ? "will" : "won't",
+		pdev->name);
+#endif
 
 	new_csiphy_dev->v4l2_dev_str.internal_ops =
 		&csiphy_subdev_intern_ops;
