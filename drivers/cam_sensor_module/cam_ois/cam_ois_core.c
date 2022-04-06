@@ -16,6 +16,8 @@
 #include "cam_common_util.h"
 #include "cam_packet_util.h"
 
+#define OIS_COEF_CHUNK_SIZE (256)
+
 extern int dw9781c_check_fw_download(struct camera_io_master * io_master_info, const uint8_t *fwData, uint32_t fwSize);
 extern void dw9781_post_firmware_download(struct camera_io_master * io_master_info, const uint8_t *fwData, uint32_t fwSize);
 
@@ -520,7 +522,7 @@ static int cam_ois_fw_coeff_download(struct cam_ois_ctrl_t *o_ctrl)
 
 	total_bytes = fw->size;
 	if(o_ctrl->ois_fw_txn_data_sz == 0)
-		txn_data_size = total_bytes;
+		txn_data_size = OIS_COEF_CHUNK_SIZE;
 	else
 		txn_data_size = o_ctrl->ois_fw_txn_data_sz;
 
@@ -536,6 +538,9 @@ static int cam_ois_fw_coeff_download(struct cam_ois_ctrl_t *o_ctrl)
 	}
 
 	CAM_DBG(CAM_OIS, "FW coeff size:%d", total_bytes);
+	CAM_DBG(CAM_OIS, "Coeff size:%d, chunk:%d addr_inc:%d, addr_type:%d, data_type:%d",
+	                 txn_regsetting_size, txn_data_size, o_ctrl->ois_fw_inc_addr,
+	                 o_ctrl->ois_fw_addr_type, o_ctrl->ois_fw_data_type);
 
 	i2c_reg_setting.reg_setting = (struct cam_sensor_i2c_reg_array *) (
 		vaddr);
@@ -565,6 +570,7 @@ static int cam_ois_fw_coeff_download(struct cam_ois_ctrl_t *o_ctrl)
 		}
 		total_idx += packet_idx;
 	}
+	CAM_DBG(CAM_OIS, "FW coeff download done");
 
 release_firmware:
 	vfree(vaddr);
