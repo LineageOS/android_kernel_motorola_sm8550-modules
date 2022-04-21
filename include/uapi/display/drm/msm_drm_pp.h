@@ -738,6 +738,7 @@ struct drm_msm_fp16_csc {
 };
 
 #define DIMMING_ENABLE (1 << 0)
+#define DIMMING_DISABLE 0
 #define DIMMING_MIN_BL_VALID (1 << 1)
 struct drm_msm_backlight_info {
 	__u32 brightness_max;
