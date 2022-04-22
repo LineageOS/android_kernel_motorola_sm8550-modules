@@ -272,6 +272,7 @@ int dsi_display_set_backlight(struct drm_connector *connector,
 		bl_temp = panel->bl_config.dimming_bl_lut->mapped_bl[bl_temp];
 	}
 
+	bl_temp = bl_lvl;
 	if (bl_temp > panel->bl_config.bl_max_level)
 		bl_temp = panel->bl_config.bl_max_level;
 
