@@ -64,7 +64,7 @@ static int32_t dw9781_cci_read(struct camera_io_master * io_master_info, uint16_
 {
 	int32_t rc = 0;
 	uint32_t regVal = 0;
-	rc = camera_io_dev_read(io_master_info, reg, &regVal, CAMERA_SENSOR_I2C_TYPE_WORD, CAMERA_SENSOR_I2C_TYPE_WORD);
+	rc = camera_io_dev_read(io_master_info, reg, &regVal, CAMERA_SENSOR_I2C_TYPE_WORD, CAMERA_SENSOR_I2C_TYPE_WORD, false);
 	if (!rc) {
 		*val = (uint16_t)regVal;
 	}
