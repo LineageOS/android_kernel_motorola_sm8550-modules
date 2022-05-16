@@ -212,6 +212,9 @@ struct dsi_panel_reset_config {
 	int disp_en_gpio;
 	int lcd_mode_sel_gpio;
 	u32 mode_sel_state;
+	int vio_en_gpio;
+	int vci_en_gpio;
+	int vdd_en_gpio;
 };
 
 enum esd_check_status_mode {
