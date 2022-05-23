@@ -439,6 +439,7 @@ struct dsi_panel {
 	int panel_power_cnt;
 	struct msm_param_info curDCModeParaInfo;
 	bool panel_send_cmd;
+	bool esd_first_check;
 };
 
 bool dsi_display_all_displays_dead(void);
