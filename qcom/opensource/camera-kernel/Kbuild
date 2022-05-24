@@ -58,6 +58,8 @@ else ifneq (,$(filter oneli oneli_factory, $(TARGET_PRODUCT)))
 include $(CAMERA_KERNEL_ROOT)/config/oneli.mk
 else ifneq (,$(filter eqs eqs_factory, $(TARGET_PRODUCT)))
 include $(CAMERA_KERNEL_ROOT)/config/eqs.mk
+else ifneq (,$(filter rtwo rtwo_factory, $(TARGET_PRODUCT)))
+include $(CAMERA_KERNEL_ROOT)/config/rtwo.mk
 endif
 
 # List of all camera-kernel headers
