@@ -198,7 +198,7 @@ static void dp_ctrl_wait4video_ready(struct dp_ctrl_private *ctrl)
 	if (!wait_for_completion_timeout(&ctrl->video_comp, HZ / 2))
 		DP_WARN("SEND_VIDEO time out\n");
 	else
-		DP_DEBUG("SEND_VIDEO triggered\n");
+		DP_INFO("SEND_VIDEO triggered\n");
 }
 
 static int dp_ctrl_update_sink_vx_px(struct dp_ctrl_private *ctrl)
@@ -1001,6 +1001,7 @@ static int dp_ctrl_link_maintenance(struct dp_ctrl *dp_ctrl)
 	if (atomic_read(&ctrl->aborted))
 		goto end;
 
+	DP_INFO("stream_count=%d\n", ctrl->stream_count);
 	ctrl->aux->state |= DP_STATE_LINK_MAINTENANCE_STARTED;
 	ret = dp_ctrl_setup_main_link(ctrl);
 	ctrl->aux->state &= ~DP_STATE_LINK_MAINTENANCE_STARTED;
@@ -1303,7 +1304,7 @@ static int dp_ctrl_stream_on(struct dp_ctrl *dp_ctrl, struct dp_panel *panel)
 	ctrl->stream_count++;
 
 	link_ready = ctrl->catalog->mainlink_ready(ctrl->catalog);
-	DP_DEBUG("mainlink %s\n", link_ready ? "READY" : "NOT READY");
+	DP_INFO("mainlink %s\n", link_ready ? "READY" : "NOT READY");
 
 	/* wait for link training completion before fec config as per spec */
 	dp_ctrl_fec_setup(ctrl);
