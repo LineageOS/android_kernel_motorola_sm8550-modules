@@ -238,6 +238,11 @@ int dsi_display_set_backlight(struct drm_connector *connector,
 	u32 bl_scale, bl_scale_sv;
 	u64 bl_temp;
 	int rc = 0;
+	struct sde_connector *c_conn;
+	static unsigned long lasttimejiffies = 0;
+	unsigned long nowtimejiffies = jiffies_to_msecs(jiffies);
+	static bool lastTrend = true; //true: increasing; false: decreasing
+	bool curTrend = false;
 
 	if (dsi_display == NULL || dsi_display->panel == NULL)
 		return -EINVAL;
@@ -251,9 +256,21 @@ int dsi_display_set_backlight(struct drm_connector *connector,
 		goto error;
 	}
 
-	if (!(panel->bl_config.bl_level && bl_lvl))
-		DSI_INFO("bl_level changed from %u to %u\n",
-		       (u32)(panel->bl_config.bl_level), (u32)bl_lvl);
+	// Print log 1. Every 500ms.  2. Trend change  3. include 0 value
+	c_conn = to_sde_connector(connector);
+	if (bl_lvl != panel->bl_config.bl_level)
+		curTrend = (((int)bl_lvl - (int)panel->bl_config.bl_level) > 0) ? true : false;
+	else curTrend = lastTrend;
+	if ((!panel->bl_config.bl_level && bl_lvl) ||
+		(panel->bl_config.bl_level && !bl_lvl) ||
+		(nowtimejiffies - lasttimejiffies) > 500 ||
+		lastTrend != curTrend) {
+		pr_info("set_backlight from %u to %u, Trend[cur:last=%d:%d], max[bl:brightness:thermal=%d:%d:%d], for %s\n",
+		        (u32)(panel->bl_config.bl_level), (u32)bl_lvl, curTrend, lastTrend, panel->bl_config.bl_max_level,
+		        panel->bl_config.brightness_max_level, c_conn->thermal_max_brightness, panel->name);
+		lasttimejiffies = nowtimejiffies;
+	}
+	lastTrend = curTrend;
 
 	panel->bl_config.bl_level = bl_lvl;
 

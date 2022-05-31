@@ -208,7 +208,7 @@ static int sde_backlight_cooling_cb(struct notifier_block *nb,
 	struct backlight_device *bd = (struct backlight_device *)data;
 
 	c_conn = bl_get_data(bd);
-	SDE_DEBUG("bl: thermal max brightness cap:%lu\n", val);
+	SDE_INFO("bl: thermal max brightness cap:%lu\n", val);
 	c_conn->thermal_max_brightness = val;
 
 	sde_backlight_device_update_status(bd);
