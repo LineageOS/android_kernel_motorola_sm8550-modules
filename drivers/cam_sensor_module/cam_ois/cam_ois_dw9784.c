@@ -77,7 +77,7 @@ static void dw9784_delay_ms(uint32_t ms)
 
 void dw9784_ois_reset(struct camera_io_master * io_master_info)
 {
-	CAM_DBG(CAM_OIS, "[dw9784_ois_reset] ois reset");
+	CAM_INFO(CAM_OIS, "[dw9784_ois_reset] ois reset");
 	dw9784_cci_write(io_master_info, 0xD002, 0x0001); /* DW9784_DBGc reset */
 	dw9784_delay_ms(4);
 	dw9784_cci_write(io_master_info, 0xD001, 0x0001); /* Active mode (DSP ON) */
@@ -87,26 +87,26 @@ void dw9784_ois_reset(struct camera_io_master * io_master_info)
 
 void dw9784_code_pt_off(struct camera_io_master * io_master_info)
 {
-	CAM_DBG(CAM_OIS, "[dw9784_code_pt_off] start");
+	CAM_INFO(CAM_OIS, "[dw9784_code_pt_off] start");
 	/* release all protection */
 	dw9784_cci_write(io_master_info, 0xFD00, 0x5252);
 	dw9784_delay_ms(1);
-	CAM_DBG(CAM_OIS, "[dw9784_code_pt_off] finish");
+	CAM_INFO(CAM_OIS, "[dw9784_code_pt_off] finish");
 }
 
 void dw9784_pid_erase(struct camera_io_master * io_master_info)
 {
-	CAM_DBG(CAM_OIS, "[dw9784_pid_erase] start pid flash(IF) erase");
+	CAM_INFO(CAM_OIS, "[dw9784_pid_erase] start pid flash(IF) erase");
 	dw9784_cci_write(io_master_info, 0xde03, 0x0000);			// page 0
 	dw9784_delay_ms(1);
 	dw9784_cci_write(io_master_info, 0xde04, 0x0008);			// page erase
 	dw9784_delay_ms(10);											// need to delay after erase
-	CAM_DBG(CAM_OIS, "[dw9784_pid_erase] finish");
+	CAM_INFO(CAM_OIS, "[dw9784_pid_erase] finish");
 }
 
 void dw9784_fw_eflash_erase(struct camera_io_master * io_master_info)
 {
-	CAM_DBG(CAM_OIS, "[dw9784_fw_eflash_erase] start fw flash erase");
+	CAM_INFO(CAM_OIS, "[dw9784_fw_eflash_erase] start fw flash erase");
 	dw9784_cci_write(io_master_info, 0xde03, 0x0000);			// 4k Sector_0
 	dw9784_delay_ms(1);
 	dw9784_cci_write(io_master_info, 0xde04, 0x0002);			// 4k Sector Erase
@@ -131,12 +131,12 @@ void dw9784_fw_eflash_erase(struct camera_io_master * io_master_info)
 	dw9784_delay_ms(1);
 	dw9784_cci_write(io_master_info, 0xde04, 0x0002);			// 4k Sector Erase
 	dw9784_delay_ms(10);						// need to delay after erase
-	CAM_DBG(CAM_OIS, "[dw9784_fw_eflash_erase] finish");
+	CAM_INFO(CAM_OIS, "[dw9784_fw_eflash_erase] finish");
 }
 
 void dw9784_flash_acess(struct camera_io_master * io_master_info)
 {
-	CAM_DBG(CAM_OIS, "[dw9784_flash_acess] execution");
+	CAM_INFO(CAM_OIS, "[dw9784_flash_acess] execution");
 	/* release all protection */
 	dw9784_cci_write(io_master_info, 0xFAFA, 0x98AC);
 	dw9784_delay_ms(1);
@@ -155,7 +155,7 @@ int dw9784_whoami_chk(struct camera_io_master * io_master_info)
 	dw9784_flash_acess(io_master_info); /* All protection */
 
 	dw9784_cci_read(io_master_info, 0xD060, &sec_chip_id); /* 2nd chip id */
-	CAM_DBG(CAM_OIS, "[dw9784_ois_ready_check] sec_chip_id : 0x%04x", sec_chip_id);
+	CAM_INFO(CAM_OIS, "[dw9784_ois_ready_check] sec_chip_id : 0x%04x", sec_chip_id);
 	if(sec_chip_id != 0x0020)
 	{
 		CAM_ERR(CAM_OIS, "[dw9784] second_chip_id check fail : 0x%04X", sec_chip_id);
@@ -181,12 +181,12 @@ int dw9784_checksum_fw_chk(struct camera_io_master * io_master_info)
 	dw9784_cci_read(io_master_info, 0x700C, &reg_fw_checksum);
 	dw9784_cci_read(io_master_info, 0x700D, &reg_checksum_status);
 
-	CAM_DBG(CAM_OIS, "[dw9784_checksum_fw_chk] reg_checksum_status : 0x%04X", reg_checksum_status);
-	CAM_DBG(CAM_OIS, "[dw9784_checksum_fw_chk] reg_fw_checksum : 0x%04X", reg_fw_checksum);
+	CAM_INFO(CAM_OIS, "[dw9784_checksum_fw_chk] reg_checksum_status : 0x%04X", reg_checksum_status);
+	CAM_INFO(CAM_OIS, "[dw9784_checksum_fw_chk] reg_fw_checksum : 0x%04X", reg_fw_checksum);
 
 	if( (reg_checksum_status & 0x0001) == 0)
 	{
-		CAM_DBG(CAM_OIS, "[dw9784_checksum_fw_chk] fw checksum pass");
+		CAM_INFO(CAM_OIS, "[dw9784_checksum_fw_chk] fw checksum pass");
 		return 0;
 	}else
 	{
@@ -198,7 +198,7 @@ int dw9784_checksum_fw_chk(struct camera_io_master * io_master_info)
 static int dw9784_erase_mtp_rewritefw(struct camera_io_master * io_master_info)
 {
 	uint16_t FMC;
-	CAM_DBG(CAM_OIS, "dw9784 erase for rewritefw starting..");
+	CAM_INFO(CAM_OIS, "dw9784 erase for rewritefw starting..");
 	dw9784_cci_write(io_master_info, 0xd001, 0x0000);
 	dw9784_delay_ms(1);
 	dw9784_flash_acess(io_master_info);
@@ -208,7 +208,7 @@ static int dw9784_erase_mtp_rewritefw(struct camera_io_master * io_master_info)
 	dw9784_cci_read(io_master_info, 0xDE01, &FMC);
 	if (FMC != 0)
 	{
-		CAM_DBG(CAM_OIS, "[dw9784_download_fw] FMC register value 1st warning : %04x", FMC);
+		CAM_INFO(CAM_OIS, "[dw9784_download_fw] FMC register value 1st warning : %04x", FMC);
 		dw9784_cci_write(io_master_info, 0xDE01, 0x0000);
 		dw9784_delay_ms(1);
 		FMC = 0; // initialize FMC value
@@ -252,7 +252,7 @@ static int dw9784_prepare_fw_download(struct camera_io_master * io_master_info)
 	dw9784_cci_read(io_master_info, 0xDE01, &FMC);
 	if (FMC != 0)
 	{
-		CAM_DBG(CAM_OIS, "[dw9784_download_fw] FMC register value 1st warning : %04x", FMC);
+		CAM_INFO(CAM_OIS, "[dw9784_download_fw] FMC register value 1st warning : %04x", FMC);
 		dw9784_cci_write(io_master_info, 0xDE01, 0x0000);
 		dw9784_delay_ms(1);
 		FMC = 0; // initialize FMC value
@@ -268,7 +268,7 @@ static int dw9784_prepare_fw_download(struct camera_io_master * io_master_info)
 
 	dw9784_code_pt_off(io_master_info);
 	dw9784_fw_eflash_erase(io_master_info);
-	CAM_DBG(CAM_OIS, "[dw9784_download_fw] start firmware download");
+	CAM_INFO(CAM_OIS, "[dw9784_download_fw] start firmware download");
 	return 0;
 }
 
@@ -283,12 +283,12 @@ int dw9784_check_fw_download(struct camera_io_master * io_master_info, const uin
 	uint16_t fw_version_latest = 0;
 
 	if (io_master_info == NULL) {
-		printk("FATAL: OIS CCI context error!!!");
+		CAM_ERR(CAM_OIS, "FATAL: OIS CCI context error!!!");
 		return -1;
 	}
 
 	if (fwData == NULL || fwSize < FW_VERSION_OFFSET*sizeof(uint16_t)) {
-		printk("FATAL: firmware buffer(%p) is NULL or size(%d) abnormal!!!", fwData, fwSize);
+		CAM_ERR(CAM_OIS, "FATAL: firmware buffer(%p) is NULL or size(%d) abnormal!!!", fwData, fwSize);
 		return -1;
 	}
 
@@ -308,13 +308,13 @@ int dw9784_check_fw_download(struct camera_io_master * io_master_info, const uin
 
 	dw9784_cci_read(io_master_info, DW9784_CHIP_ID_ADDRESS, &first_chip_id);
 	dw9784_cci_read(io_master_info, 0x7001, &chip_checksum);
-	CAM_DBG(CAM_OIS, "[dw9784] FW_VER_PHONE_MAKER : 0x%x", chip_checksum);
+	CAM_INFO(CAM_OIS, "[dw9784] FW_VER_PHONE_MAKER : 0x%x", chip_checksum);
 	dw9784_cci_read(io_master_info, 0x7002, &chip_checksum);
-	CAM_DBG(CAM_OIS, "[dw9784] FW_DATE_PHONE_MAKER : 0x%x", chip_checksum);
+	CAM_INFO(CAM_OIS, "[dw9784] FW_DATE_PHONE_MAKER : 0x%x", chip_checksum);
 
-	CAM_DBG(CAM_OIS, "[dw9784] first_chip_id : 0x%x", first_chip_id);
+	CAM_INFO(CAM_OIS, "[dw9784] first_chip_id : 0x%x", first_chip_id);
 	if (first_chip_id != DW9784_CHIP_ID) { /* first_chip_id verification failed */
-		CAM_DBG(CAM_OIS, "[dw9784] start flash download:: size:%d, version:0x%x",
+		CAM_INFO(CAM_OIS, "[dw9784] start flash download:: size:%d, version:0x%x",
 			g_dw9784FirmwareContext.size, g_dw9784FirmwareContext.version);
 		needDownload = 1;
 		ret = dw9784_prepare_fw_download(io_master_info); /* Need to forced update OIS firmware again. */
@@ -323,22 +323,22 @@ int dw9784_check_fw_download(struct camera_io_master * io_master_info, const uin
 		if(fwchecksum != 0)
 		{
 			needDownload = 1;
-			CAM_DBG(CAM_OIS, "[dw9784] firmware checksum error");
+			CAM_INFO(CAM_OIS, "[dw9784] firmware checksum error");
 		}
 
 		dw9784_cci_read(io_master_info, FW_VER_CURR_ADDR, &fw_version_current);
 		fw_version_latest = g_dw9784FirmwareContext.version; /*Firmware version read from file content.*/
 
-		CAM_DBG(CAM_OIS, "[dw9784] fw_version_current = 0x%x, fw_version_latest = 0x%x",
+		CAM_INFO(CAM_OIS, "[dw9784] fw_version_current = 0x%x, fw_version_latest = 0x%x",
 			              fw_version_current, fw_version_latest);
 
 		/* download firmware, check if need update, download firmware to flash */
 		if (needDownload || ((fw_version_current & 0xFF) != (fw_version_latest & 0xFF))) {
-			CAM_DBG(CAM_OIS, "[dw9784] start flash download:: size:%d, version:0x%x needDownload %d",
+			CAM_INFO(CAM_OIS, "[dw9784] start flash download:: size:%d, version:0x%x needDownload %d",
 			                 g_dw9784FirmwareContext.size, g_dw9784FirmwareContext.version, needDownload);
 
 			ret = dw9784_prepare_fw_download(io_master_info);
-			CAM_DBG(CAM_OIS, "[dw9784] flash download::vendor_dw9784");
+			CAM_INFO(CAM_OIS, "[dw9784] flash download::vendor_dw9784");
 			if (ret != EOK) {
 				dw9784_erase_mtp_rewritefw(io_master_info);
 				CAM_ERR(CAM_OIS, "[dw9784] firmware download error, ret = 0x%x", ret);
@@ -346,7 +346,7 @@ int dw9784_check_fw_download(struct camera_io_master * io_master_info, const uin
 				needDownload = 1;
 			}
 		} else {
-			CAM_DBG(CAM_OIS, "[dw9784] ois firmware version is updated, skip download");
+			CAM_INFO(CAM_OIS, "[dw9784] ois firmware version is updated, skip download");
 		}
 	}
 	return needDownload;
@@ -364,7 +364,7 @@ int dw9784_check_if_download(struct camera_io_master * io_master_info)
 	dw9784_delay_ms(1);
 	if (FMC != 0x1000)
 	{
-		CAM_DBG(CAM_OIS, "[dw9784_download_fw] IF FMC register value 1st warning : %04x", FMC);
+		CAM_INFO(CAM_OIS, "[dw9784_download_fw] IF FMC register value 1st warning : %04x", FMC);
 		dw9784_cci_write(io_master_info, 0xDE01, 0x1000);
 		dw9784_delay_ms(1);
 		FMC = 0; // initialize FMC value
@@ -381,7 +381,7 @@ int dw9784_check_if_download(struct camera_io_master * io_master_info)
 	/* step 2. erease IF(FW/PID) eFLASH  */
 	dw9784_pid_erase(io_master_info);
 
-	CAM_DBG(CAM_OIS, "[dw9784_download_fw] start firmware/pid download");
+	CAM_INFO(CAM_OIS, "[dw9784_download_fw] start firmware/pid download");
 	return 0;
 }
 EXPORT_SYMBOL(dw9784_check_if_download);
