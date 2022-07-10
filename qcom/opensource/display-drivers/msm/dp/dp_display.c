@@ -1428,32 +1428,38 @@ static int dp_display_init_aux_switch(struct dp_display_private *dp)
 
 	SDE_EVT32_EXTERNAL(SDE_EVTLOG_FUNC_ENTRY);
 
-	nb.notifier_call = dp_display_fsa4480_callback;
-	nb.priority = 0;
-
 	/*
-	 * Iteratively wait for reg notifier which confirms that fsa driver is probed.
-	 * Bootup DP with cable connected usecase can hit this scenario.
-	 */
-	for (retry = 0; retry < max_retries; retry++) {
-		rc = fsa4480_reg_notifier(&nb, dp->aux_switch_node);
-		if (rc == 0) {
-			DP_DEBUG("registered notifier successfully\n");
-			dp->aux_switch_ready = true;
-			break;
-		} else {
-			DP_DEBUG("failed to register notifier retry=%d rc=%d\n", retry, rc);
-			msleep(100);
+	 * If we do not define AUX switch control gpio, then we will regard using
+	 * FSA4480 or the same chips.
+	*/
+	if (!gpio_is_valid(dp->aux->dp_aux_switch_flip_gpio)) {
+		nb.notifier_call = dp_display_fsa4480_callback;
+		nb.priority = 0;
+
+		/*
+		 * Iteratively wait for reg notifier which confirms that fsa driver is probed.
+		 * Bootup DP with cable connected usecase can hit this scenario.
+		 */
+		for (retry = 0; retry < max_retries; retry++) {
+			rc = fsa4480_reg_notifier(&nb, dp->aux_switch_node);
+			if (rc == 0) {
+				DP_DEBUG("registered notifier successfully\n");
+				dp->aux_switch_ready = true;
+				break;
+			} else {
+				DP_DEBUG("failed to register notifier retry=%d rc=%d\n", retry, rc);
+				msleep(100);
+			}
 		}
-	}
 
-	if (retry == max_retries) {
-		DP_WARN("Failed to register fsa notifier\n");
-		dp->aux_switch_ready = false;
-		return rc;
-	}
+		if (retry == max_retries) {
+			DP_WARN("Failed to register fsa notifier\n");
+			dp->aux_switch_ready = false;
+			return rc;
+		}
 
-	fsa4480_unreg_notifier(&nb, dp->aux_switch_node);
+		fsa4480_unreg_notifier(&nb, dp->aux_switch_node);
+	}
 
 	SDE_EVT32_EXTERNAL(SDE_EVTLOG_FUNC_EXIT, rc);
 	return rc;
@@ -1474,7 +1480,7 @@ static int dp_display_usbpd_configure_cb(struct device *dev)
 		DP_ERR("no driver data found\n");
 		return -ENODEV;
 	}
-	DP_INFO("\n");
+	DP_INFO("%s\n", __func__);
 
 	if (!dp->debug->sim_mode && !dp->no_aux_switch
 	    && !dp->parser->gpio_aux_switch && dp->aux_switch_node) {
