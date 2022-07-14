@@ -48,7 +48,7 @@ endif
 
 ifeq ($(CONFIG_ARCH_PARROT), y)
 include $(CAMERA_KERNEL_ROOT)/config/parrot.mk
-endif 
+endif
 
 ifneq (,$(filter hiphid hiphic hiphi hiphid_factory hiphic_factory hiphi_factory, $(TARGET_PRODUCT)))
 include $(CAMERA_KERNEL_ROOT)/config/hiphi.mk
@@ -58,8 +58,10 @@ else ifneq (,$(filter oneli oneli_factory, $(TARGET_PRODUCT)))
 include $(CAMERA_KERNEL_ROOT)/config/oneli.mk
 else ifneq (,$(filter eqs eqs_factory, $(TARGET_PRODUCT)))
 include $(CAMERA_KERNEL_ROOT)/config/eqs.mk
-else ifneq (,$(filter rtwo rtwo_factory, $(TARGET_PRODUCT)))
+else ifneq (,$(filter rtwo, $(TARGET_PRODUCT)))
 include $(CAMERA_KERNEL_ROOT)/config/rtwo.mk
+else ifneq (,$(filter rtwo_factory, $(TARGET_PRODUCT)))
+include $(CAMERA_KERNEL_ROOT)/config/rtwo_factory.mk
 endif
 
 # List of all camera-kernel headers

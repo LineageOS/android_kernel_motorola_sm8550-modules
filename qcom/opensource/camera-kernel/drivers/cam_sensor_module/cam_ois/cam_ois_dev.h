@@ -29,6 +29,21 @@
 #define OIS_DRIVER_I2C "cam-i2c-ois"
 #define OIS_DRIVER_I3C "i3c_camera_ois"
 
+
+#ifdef CONFIG_DONGWOON_OIS_VSYNC
+
+#define PACKET_ADDR 0x70B0
+#define PACKET_BYTE 62
+#define MAX_PACKET 5
+#define MAX_SAMPLE 50
+
+#define READ_COUNT 3
+#define DATA_READY_ADDR 0x70DA
+#define DATA_READY 0x0001
+
+#endif
+
+
 enum cam_ois_state {
 	CAM_OIS_INIT,
 	CAM_OIS_ACQUIRE,
@@ -146,6 +161,20 @@ struct cam_ois_ctrl_t {
 	uint8_t ois_fw_addr_type;
 	uint8_t ois_fw_data_type;
 	struct cam_ois_opcode opcode;
+#ifdef CONFIG_DONGWOON_OIS_VSYNC
+	bool is_ois_vsync_irq_supported;
+	int vsync_irq;
+	struct mutex vsync_mutex;
+	struct completion vsync_completion;
+	uint64_t prev_timestamp;
+	uint64_t curr_timestamp;
+	int packet_count;
+	bool is_first_vsync;
+	uint8_t *ois_data;
+	int ois_data_size;
+	bool is_video_mode;
+	bool is_need_eis_data;
+#endif
 };
 
 /**

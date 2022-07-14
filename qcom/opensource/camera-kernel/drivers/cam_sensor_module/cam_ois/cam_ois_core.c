@@ -121,6 +121,15 @@ static int cam_ois_power_up(struct cam_ois_ctrl_t *o_ctrl)
 	struct completion                      *i3c_probe_completion = NULL;
 
 	soc_private = (struct cam_ois_soc_private *)o_ctrl->soc_info.soc_private;
+
+#ifdef CONFIG_DONGWOON_OIS_VSYNC
+	o_ctrl->prev_timestamp = 0;
+	o_ctrl->curr_timestamp = 0;
+	o_ctrl->is_first_vsync = 1;
+	o_ctrl->is_video_mode  = false;
+	o_ctrl->is_need_eis_data  = false;
+#endif
+
 	power_info = &soc_private->power_info;
 
 	if ((power_info->power_setting == NULL) &&
@@ -297,6 +306,16 @@ static int cam_ois_apply_settings(struct cam_ois_ctrl_t *o_ctrl,
 					"Failed in Applying i2c wrt settings");
 				return rc;
 			}
+#ifdef CONFIG_DONGWOON_OIS_VSYNC
+			if (strstr(o_ctrl->ois_name, "dw9784")) {
+				if (i2c_list->i2c_settings.reg_setting[0].reg_addr == 0x7013 &&
+					i2c_list->i2c_settings.reg_setting[0].reg_data == 0x8001) /*0x7013=0x8001 means movie mode*/
+					o_ctrl->is_video_mode = true;
+				else if (i2c_list->i2c_settings.reg_setting[0].reg_addr == 0x7013 &&
+					i2c_list->i2c_settings.reg_setting[0].reg_data == 0x8000) /*0x7013=0x8000 means still mode*/
+					o_ctrl->is_video_mode = false;
+			}
+#endif
 		} else if (i2c_list->op_code == CAM_SENSOR_I2C_WRITE_SEQ) {
 			rc = camera_io_dev_write_continuous(
 				&(o_ctrl->io_master_info),
@@ -993,6 +1012,11 @@ static int cam_ois_pkt_parse(struct cam_ois_ctrl_t *o_ctrl, void *arg)
 				o_ctrl->cam_ois_state);
 			return rc;
 		}
+
+#ifdef CONFIG_DONGWOON_OIS_VSYNC
+		o_ctrl->is_need_eis_data  = false;
+#endif
+
 		offset = (uint32_t *)&csl_packet->payload;
 		offset += (csl_packet->cmd_buf_offset / sizeof(uint32_t));
 		cmd_desc = (struct cam_cmd_buf_desc *)(offset);
@@ -1099,6 +1123,14 @@ static int cam_ois_pkt_parse(struct cam_ois_ctrl_t *o_ctrl, void *arg)
 		struct cam_buf_io_cfg *io_cfg;
 		struct i2c_settings_array i2c_read_settings;
 
+#ifdef CONFIG_DONGWOON_OIS_VSYNC
+		unsigned long rem_jiffies = 0;
+		uint8_t *read_buff = NULL;
+		int packet_cnt = 0;
+		uint32_t buff_length = 0, read_length = 0;
+		struct i2c_settings_list *i2c_list;
+#endif
+
 		if (o_ctrl->cam_ois_state < CAM_OIS_CONFIG) {
 			rc = -EINVAL;
 			CAM_WARN(CAM_OIS,
@@ -1113,6 +1145,10 @@ static int cam_ois_pkt_parse(struct cam_ois_ctrl_t *o_ctrl, void *arg)
 			rc = -EINVAL;
 			return rc;
 		}
+
+#ifdef CONFIG_DONGWOON_OIS_VSYNC
+		o_ctrl->is_need_eis_data  = true;
+#endif
 
 		INIT_LIST_HEAD(&(i2c_read_settings.list_head));
 
@@ -1140,6 +1176,65 @@ static int cam_ois_pkt_parse(struct cam_ois_ctrl_t *o_ctrl, void *arg)
 			return rc;
 		}
 
+#ifdef CONFIG_DONGWOON_OIS_VSYNC
+		list_for_each_entry(i2c_list,
+			&(i2c_read_settings.list_head), list) {
+			if (i2c_list->op_code == CAM_SENSOR_I2C_READ_SEQ) {
+				read_buff     = i2c_list->i2c_settings.read_buff;
+				buff_length   = i2c_list->i2c_settings.read_buff_len;
+				read_length   = i2c_list->i2c_settings.size;
+
+				CAM_DBG(CAM_OIS, "buff_length = %d, read_length = %d", buff_length, read_length);
+
+				if (read_length > buff_length || buff_length < (PACKET_BYTE*MAX_PACKET)) {
+					CAM_ERR(CAM_SENSOR, "Invalid buffer size, readLen: %d, bufLen: %d", read_length, buff_length);
+					delete_request(&i2c_read_settings);
+					return -EINVAL;
+				}
+
+				// block hal LensPositionThread and wait ois data from vsync irq, max wait 120 ms
+				rem_jiffies = wait_for_completion_timeout(&o_ctrl->vsync_completion,
+										msecs_to_jiffies(120));
+				if (rem_jiffies == 0) {
+					CAM_ERR(CAM_OIS, "Wait ois data completion timeout 120 ms");
+					delete_request(&i2c_read_settings);
+					return -ETIMEDOUT;
+				}
+
+				mutex_lock(&(o_ctrl->vsync_mutex));
+
+				// ois vsync SOF qtime timestamp
+				qtime_ns = o_ctrl->prev_timestamp;
+				packet_cnt = o_ctrl->packet_count;
+
+				if (csl_packet->num_io_configs > 1 &&
+					qtime_ns != 0 &&
+					packet_cnt > 0 &&
+					packet_cnt <= MAX_PACKET) {
+					rc = cam_sensor_util_write_qtimer_to_io_buffer(qtime_ns, &io_cfg[1]);
+					if (rc < 0) {
+						CAM_ERR(CAM_OIS, "write qtimer failed rc: %d", rc);
+						delete_request(&i2c_read_settings);
+						mutex_unlock(&(o_ctrl->vsync_mutex));
+						return rc;
+					}
+				} else {
+					CAM_ERR(CAM_OIS, "csl_packet->num_io_configs = %d, qtime_ns = %lld, packet_cnt = %d",
+							csl_packet->num_io_configs, qtime_ns, packet_cnt);
+					delete_request(&i2c_read_settings);
+					mutex_unlock(&(o_ctrl->vsync_mutex));
+					return rc;
+				}
+
+				// copy ois vsync data to hal buff
+				if ((packet_cnt*PACKET_BYTE) <= buff_length &&
+					(packet_cnt*PACKET_BYTE) <= o_ctrl->ois_data_size)
+					memcpy((void *)read_buff, (void *)o_ctrl->ois_data, packet_cnt*PACKET_BYTE);
+
+				mutex_unlock(&(o_ctrl->vsync_mutex));
+			}
+		}
+#else
 		rc = cam_sensor_util_get_current_qtimer_ns(&qtime_ns);
 		if (rc < 0) {
 			CAM_ERR(CAM_SENSOR, "failed to get qtimer rc:%d");
@@ -1165,6 +1260,7 @@ static int cam_ois_pkt_parse(struct cam_ois_ctrl_t *o_ctrl, void *arg)
 				return rc;
 			}
 		}
+#endif
 
 		rc = delete_request(&i2c_read_settings);
 		if (rc < 0) {
