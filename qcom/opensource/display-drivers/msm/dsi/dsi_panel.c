@@ -1031,7 +1031,8 @@ static int dsi_panel_set_local_hbm_param(struct dsi_panel *panel,
 	struct panel_param_val_map *param_map_state;
 	struct panel_param *panel_param;
 	struct dsi_cmd_desc *cmds;
-
+	int alpha_level;
+	int bl_num;
 
 	panel_param = &panel->param_cmds[param_info->param_idx];
 	if (!panel_param) {
@@ -1062,21 +1063,28 @@ static int dsi_panel_set_local_hbm_param(struct dsi_panel *panel,
 		cmds = param_map_state->cmds->cmds;
 		count = param_map_state->cmds->count;
 
+		bl_num = panel->bl_config.bl_max_level/(lhbm_config->alpha_size - 1);
+		if(bl_num > 1)
+			alpha_level = lhbm_config->dbv_level/bl_num;
+		else
+			alpha_level = lhbm_config->dbv_level;
+
 		for (i =0; i < count; i++) {
 			payload = (u8 *)cmds->msg.tx_buf;
 			if(param_info->value == HBM_FOD_ON_STATE &&
 				payload[0] == lhbm_config->alpha_reg) {
-				if(lhbm_config->dbv_level >lhbm_config->alpha_size) {
+				if(alpha_level >lhbm_config->alpha_size) {
 					DSI_ERR("unsupport dbv level %d on local hbm\n", lhbm_config->dbv_level);
 					rc = -EINVAL;
 					goto end;
 				}
 
-				alpha = lhbm_config->alpha[lhbm_config->dbv_level];
+				alpha = lhbm_config->alpha[alpha_level];
 				payload[1] = (alpha&0xff00)>>8;
 				payload[2] = alpha&0xff;
-				DSI_INFO("%s: alpha [%x]=%x%x\n",
-				        __func__, payload[0], payload[1], payload[2]);
+				DSI_INFO("%s: alpha [%x]=%x%x  alpha_level = %d backlight level=%d\n ",
+				        __func__, payload[0], payload[1], payload[2],alpha_level,
+				        lhbm_config->dbv_level);
 				rc =  0;
 				goto end;
 			} else if(param_info->value == HBM_OFF_STATE &&
