@@ -292,7 +292,9 @@ static void sde_crtc_calc_fps(struct sde_crtc *sde_crtc)
 						* DEFAULT_FPS_PERIOD_1_SEC * 10;
 		do_div(fps, diff_us);
 		sde_crtc->fps_info.measured_fps = (unsigned int)fps;
-		SDE_DEBUG(" FPS for crtc%d is %d.%d\n",
+		if (sde_crtc->fps_info.fps_log_enable)
+		    SDE_INFO(" FPS for last (%dms, %d frames) of crtc%d is %d.%d\n",
+				diff_us/1000, sde_crtc->fps_info.frame_count,
 				sde_crtc->base.base.id, (unsigned int)fps/10,
 				(unsigned int)fps%10);
 		sde_crtc->fps_info.last_sampled_time_us = current_time_us;
@@ -426,6 +428,34 @@ static ssize_t fps_periodicity_ms_show(struct device *device,
 
 	return scnprintf(buf, PAGE_SIZE, "%d\n",
 		(sde_crtc->fps_info.fps_periodic_duration)/MILI_TO_MICRO);
+}
+
+static ssize_t measured_fps_store(struct device *device,
+		struct device_attribute *attr, const char *buf, size_t count)
+{
+	struct drm_crtc *crtc;
+	struct sde_crtc *sde_crtc;
+	int res;
+
+	/* Base of the input */
+	int cnt = 10;
+
+	if (!device || !buf) {
+		SDE_ERROR("invalid input param(s)\n");
+		return -EAGAIN;
+	}
+
+	crtc = dev_get_drvdata(device);
+	if (!crtc)
+		return -EINVAL;
+
+	sde_crtc = to_sde_crtc(crtc);
+
+	res = kstrtou32(buf, cnt, &sde_crtc->fps_info.fps_log_enable);
+	if (res < 0)
+		return res;
+
+	return count;
 }
 
 static ssize_t measured_fps_show(struct device *device,
@@ -567,7 +597,7 @@ static ssize_t retire_frame_event_show(struct device *device,
 }
 
 static DEVICE_ATTR_RO(vsync_event);
-static DEVICE_ATTR_RO(measured_fps);
+static DEVICE_ATTR_RW(measured_fps);
 static DEVICE_ATTR_RW(fps_periodicity_ms);
 static DEVICE_ATTR_RO(retire_frame_event);
 
