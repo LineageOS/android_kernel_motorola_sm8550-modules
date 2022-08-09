@@ -129,6 +129,9 @@ struct cam_ois_ctrl_t {
 #ifdef CONFIG_MOT_OIS_AF_DRIFT
 	struct i2c_settings_array i2c_af_drift_data;
 #endif
+#ifdef CONFIG_MOT_OIS_AFTER_SALES_SERVICE
+	struct i2c_settings_array i2c_gyro_data;
+#endif
 	struct i2c_settings_array i2c_time_data;
 	enum msm_camera_device_type_t ois_device_type;
 	enum cam_ois_state cam_ois_state;

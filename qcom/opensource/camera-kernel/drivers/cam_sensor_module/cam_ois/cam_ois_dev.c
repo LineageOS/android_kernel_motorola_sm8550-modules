@@ -374,6 +374,9 @@ static int cam_ois_component_bind(struct device *dev,
 #ifdef CONFIG_MOT_OIS_AF_DRIFT
 	INIT_LIST_HEAD(&(o_ctrl->i2c_af_drift_data.list_head));
 #endif
+#ifdef CONFIG_MOT_OIS_AFTER_SALES_SERVICE
+	INIT_LIST_HEAD(&(o_ctrl->i2c_gyro_data.list_head));
+#endif
 	INIT_LIST_HEAD(&(o_ctrl->i2c_time_data.list_head));
 	mutex_init(&(o_ctrl->ois_mutex));
 	rc = cam_ois_driver_soc_init(o_ctrl);
