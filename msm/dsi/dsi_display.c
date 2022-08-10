@@ -726,7 +726,7 @@ static void dsi_display_parse_te_data(struct dsi_display *display)
 	display->te_source = val;
 }
 
-static void dsi_display_set_cmd_tx_ctrl_flags(struct dsi_display *display,
+void dsi_display_set_cmd_tx_ctrl_flags(struct dsi_display *display,
 		struct dsi_cmd_desc *cmd)
 {
 	struct dsi_display_ctrl *ctrl, *m_ctrl;
@@ -6624,12 +6624,66 @@ static ssize_t panelBLExponent_show(struct device *device,
 	    return scnprintf(buf, PAGE_SIZE, "%s\n", "Not a DSI panel");
 }
 
+static ssize_t panelCellId_show(struct device *device,
+	struct device_attribute *attr, char *buf)
+{
+	struct drm_connector *conn;
+	struct sde_connector *sde_conn;
+	struct dsi_display *dsi_display;
+
+	char char_num[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
+	char char_cha[] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S',
+		'T', 'U', 'V', 'W', 'X', 'Y', 'Z'};
+	int i,j;
+	ssize_t len = 0;
+
+	if (!device || !buf) {
+		SDE_ERROR("invalid input param(s)\n");
+		return -EAGAIN;
+	}
+
+	conn = dev_get_drvdata(device);
+	sde_conn = to_sde_connector(conn);
+	dsi_display = sde_conn->display;
+	dsi_display_read_8s(dsi_display);
+
+	for (i = 13; i<36; i++) {
+		if (dsi_display->cellid[i]>=0x30 && dsi_display->cellid[i]<=0x39) {
+			j = dsi_display->cellid[i]-0x30;
+			if (i == 35)
+				len += snprintf(buf + len, PAGE_SIZE - len, "%c\n",char_num[j]);
+			else
+				len += snprintf(buf + len, PAGE_SIZE - len, "%c",char_num[j]);
+		} else if (dsi_display->cellid[i]>=0x41 && dsi_display->cellid[i]<=0x5A){
+			j = dsi_display->cellid[i]-0x41;
+			if (i == 35)
+				len += snprintf(buf + len, PAGE_SIZE - len, "%c\n",char_cha[j]);
+			else
+				len += snprintf(buf + len, PAGE_SIZE - len, "%c",char_cha[j]);
+		}
+	}
+#if 0
+	seq_printf(m, "0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x\n",
+		cellid[0], cellid[1], cellid[2], cellid[3], cellid[4], cellid[5],
+		cellid[6], cellid[7], cellid[8], cellid[9], cellid[10], cellid[11]); //12
+	seq_printf(m, "0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x\n",
+		cellid[12], cellid[13], cellid[14], cellid[15], cellid[16], cellid[17],
+		cellid[18], cellid[19], cellid[20]); //9
+	seq_printf(m, "0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x\n",
+		cellid[21], cellid[22], cellid[23], cellid[24], cellid[25], cellid[26],
+		cellid[27], cellid[28], cellid[29], cellid[30]); //10
+#endif
+	return len;//snprintf(buf, PAGE_SIZE, "%s\n", m);
+}
+
+
 static DEVICE_ATTR_RO(panelId);
 static DEVICE_ATTR_RO(panelVer);
 static DEVICE_ATTR_RO(panelName);
 static DEVICE_ATTR_RO(panelRegDA);
 static DEVICE_ATTR_RO(panelSupplier);
 static DEVICE_ATTR_RO(panelBLExponent);
+static DEVICE_ATTR_RO(panelCellId);
 
 static const struct attribute *sde_conn_panel_attrs[] = {
 	&dev_attr_panelId.attr,
@@ -6638,6 +6692,7 @@ static const struct attribute *sde_conn_panel_attrs[] = {
 	&dev_attr_panelRegDA.attr,
 	&dev_attr_panelSupplier.attr,
 	&dev_attr_panelBLExponent.attr,
+	&dev_attr_panelCellId.attr,
 	NULL
 };
 

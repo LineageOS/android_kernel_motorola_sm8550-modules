@@ -1364,3 +1364,134 @@ int dsi_display_ext_init(struct dsi_display *display)
 	return rc;
 }
 
+int mot_nt37705A_display_write_cellid(struct dsi_display *display){
+	int rc = 0;
+	//u8 Page0[] = {0x55,0xAA,0x52,0x08,0x08};
+	u8 Page0[] = {0x55,0xAA,0x52,0x08,0x03};
+	//u8 Page1[] = {0x0F,0xFF};
+	u8 Page1[] = {0x0D};
+
+	struct mipi_dsi_device *dsi;
+
+	dsi = &display->panel->mipi_device;
+	if (!display->panel) {
+		DSI_ERR("Invalid params\n");
+		return -EINVAL;
+	}
+
+	//mutex_lock(&display->panel->panel_lock);
+	if (display->panel->bl_config.bl_level > 0){
+		mipi_dsi_dcs_write(dsi, 0xF0, Page0, 5);
+		//mipi_dsi_dcs_write(dsi, 0x51, Page1, 2);
+		mipi_dsi_dcs_write(dsi, 0x6F, Page1, 1);
+	}
+	//mutex_unlock(&display->panel->panel_lock);
+	printk("dsi_panel_cud_config bl_level%d\n",display->panel->bl_config.bl_level);
+	DSI_INFO("(%s)-\n",display->panel->name);
+	return rc;
+}
+
+int mot_nt37705A_display_read_cellid(struct dsi_display_ctrl *ctrl,
+		struct dsi_display *display)
+{
+	int rc = 0;
+	struct dsi_cmd_desc cmds;
+	u8 data[] = {06, 01, 00, 01, 00, 00, 01, 0xAC};
+	u32 flags = 0;
+	u8 *payload;
+	int size, j;
+	//struct dsi_panel *panel;
+	//u8 Page0[] = {0x0D};
+	//struct mipi_dsi_device *dsi;
+
+	//dsi = &display->panel->mipi_device;
+
+	//panel = display->panel;
+	//mipi_dsi_dcs_write(dsi, 0x6F, Page0, 1);
+	mot_nt37705A_display_write_cellid(display);
+
+	/*
+	 * When DSI controller is not in initialized state, we do not want to
+	 * report a false ESD failure and hence we defer until next read
+	 * happen.
+	 */
+	if (!dsi_ctrl_validate_host_state(ctrl->ctrl))
+		return 1;
+
+	cmds.msg.type = data[0];
+	cmds.last_command = (data[1] == 1 ? true : false);
+	cmds.msg.channel = data[2];
+	cmds.msg.flags |= (data[3] == 1 ? MIPI_DSI_MSG_REQ_ACK : 0);
+	//cmds.msg.ctrl = 0;
+	cmds.ctrl = 0;
+	//cmds.post_wait_ms = cmds.msg.wait_ms = data[4];
+	cmds.post_wait_ms = data[4];
+	cmds.msg.tx_len = ((data[5] << 8) | (data[6]));
+
+	size = cmds.msg.tx_len * sizeof(u8);
+	payload = kzalloc(size, GFP_KERNEL);
+	if (!payload) {
+		rc = -ENOMEM;
+	}
+
+	for (j = 0; j < cmds.msg.tx_len; j++)
+		payload[j] = data[7 + j];
+
+	cmds.msg.tx_buf = payload;
+	/*
+	 * When DSI controller is not in initialized state, we do not want to
+	 * report a false ESD failure and hence we defer until next read
+	 * happen.
+	 */
+	flags = DSI_CTRL_CMD_READ;
+
+	cmds.msg.flags |= MIPI_DSI_MSG_UNICAST_COMMAND;
+	cmds.msg.rx_buf = &display->cellid[0];
+	cmds.msg.rx_len = 36;
+	cmds.ctrl_flags = flags;
+
+	dsi_display_set_cmd_tx_ctrl_flags(display,&cmds);
+
+	rc = dsi_ctrl_transfer_prepare(ctrl->ctrl, cmds.ctrl_flags);
+	if (rc) {
+		DSI_ERR("prepare for rx cmd transfer failed rc=%d\n", rc);
+		return rc;
+	}
+	rc = dsi_ctrl_cmd_transfer(ctrl->ctrl, &cmds);
+
+	if (rc <= 0) {
+		DSI_ERR("rx cmd transfer failed rc=%d\n", rc);
+		goto error;
+	}
+	//display->read_cellid = true;
+	pr_info("---drm dsi 0xAC cellid---\n");
+
+error:
+	dsi_ctrl_transfer_unprepare(ctrl->ctrl, cmds.ctrl_flags);
+	return 0;
+}
+
+void dsi_display_read_cellid(struct dsi_display_ctrl *ctrl,
+		struct dsi_display *display)
+{
+	if(display->panel->bl_config.bl_level > 0 && display->panel->mot_nt37705A_read_cellid){
+		mutex_lock(&display->panel->panel_lock);
+		mot_nt37705A_display_read_cellid(ctrl, display);
+		mutex_unlock(&display->panel->panel_lock);
+	}
+}
+
+int dsi_display_read_8s(struct dsi_display *display)
+{
+	struct dsi_display_ctrl *m_ctrl;
+
+	pr_info(" ++\n");
+	m_ctrl = &display->ctrl[display->cmd_master_idx];
+
+	if (!display)
+		return -EINVAL;
+	dsi_display_read_cellid(m_ctrl, display);
+
+	return 0;
+}
+
