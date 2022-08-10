@@ -4452,7 +4452,8 @@ static int dsi_panel_parse_mot_panel_config(struct dsi_panel *panel,
        } else {
            DSI_INFO("got paramVersion %d from qcom,mdss-dsi-panel-param-verision\n", panel->paramVersion);
        }
-
+	panel->mot_nt37705A_read_cellid = of_property_read_bool(of_node,
+				"qcom,mot_nt37705A_read_cellid");
 	return rc;
 }
 
