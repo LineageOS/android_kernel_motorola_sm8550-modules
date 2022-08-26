@@ -588,7 +588,7 @@ left_ch_impedance:
 		*zl = z1L/1000;
 		wcd938x_wcd_mbhc_qfuse_cal(component, zl, 0);
 	}
-	dev_dbg(component->dev, "%s: impedance on HPH_L = %d(ohms)\n",
+	dev_info(component->dev, "%s: impedance on HPH_L = %d(ohms)\n",
 		__func__, *zl);
 
 	/* Start of right impedance ramp and calculation */
@@ -620,13 +620,13 @@ right_ch_impedance:
 		*zr = z1R/1000;
 		wcd938x_wcd_mbhc_qfuse_cal(component, zr, 1);
 	}
-	dev_dbg(component->dev, "%s: impedance on HPH_R = %d(ohms)\n",
+	dev_info(component->dev, "%s: impedance on HPH_R = %d(ohms)\n",
 		__func__, *zr);
 
 	/* Mono/stereo detection */
 	if ((*zl == WCD938X_ZDET_FLOATING_IMPEDANCE) &&
 		(*zr == WCD938X_ZDET_FLOATING_IMPEDANCE)) {
-		dev_dbg(component->dev,
+		dev_info(component->dev,
 			"%s: plug type is invalid or extension cable\n",
 			__func__);
 		goto zdet_complete;
@@ -635,7 +635,7 @@ right_ch_impedance:
 	    (*zr == WCD938X_ZDET_FLOATING_IMPEDANCE) ||
 	    ((*zl < WCD_MONO_HS_MIN_THR) && (*zr > WCD_MONO_HS_MIN_THR)) ||
 	    ((*zl > WCD_MONO_HS_MIN_THR) && (*zr < WCD_MONO_HS_MIN_THR))) {
-		dev_dbg(component->dev,
+		dev_info(component->dev,
 			"%s: Mono plug type with one ch floating or shorted to GND\n",
 			__func__);
 		mbhc->hph_type = WCD_MBHC_HPH_MONO;
@@ -656,11 +656,11 @@ right_ch_impedance:
 	z_diff1 = (z1Ls > zMono) ? (z1Ls - zMono) : (zMono - z1Ls);
 	z_diff2 = ((*zl) > z1Ls) ? ((*zl) - z1Ls) : (z1Ls - (*zl));
 	if ((z_diff1 * (*zl + z1Ls)) > (z_diff2 * (z1Ls + zMono))) {
-		dev_dbg(component->dev, "%s: stereo plug type detected\n",
+		dev_info(component->dev, "%s: stereo plug type detected\n",
 			__func__);
 		mbhc->hph_type = WCD_MBHC_HPH_STEREO;
 	} else {
-		dev_dbg(component->dev, "%s: MONO plug type detected\n",
+		dev_info(component->dev, "%s: MONO plug type detected\n",
 			__func__);
 		mbhc->hph_type = WCD_MBHC_HPH_MONO;
 	}
