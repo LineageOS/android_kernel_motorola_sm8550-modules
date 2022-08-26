@@ -285,7 +285,7 @@ static void sde_crtc_calc_fps(struct sde_crtc *sde_crtc)
 			sde_crtc->fps_info.last_sampled_time_us);
 	sde_crtc->fps_info.frame_count++;
 
-	if (diff_us >= DEFAULT_FPS_PERIOD_1_SEC) {
+	if (diff_us >= sde_crtc->fps_info.fps_periodic_duration) {
 
 		 /* Multiplying with 10 to get fps in floating point */
 		fps = ((u64)sde_crtc->fps_info.frame_count)
