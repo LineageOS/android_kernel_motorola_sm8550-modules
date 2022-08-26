@@ -250,11 +250,9 @@ static irqreturn_t cam_ois_vsync_irq_thread(int irq, void *data)
 	CAM_DBG(CAM_OIS, "vsync sof qtime timestamp: prev_timestamp: %lld, curr_timestamp: %lld",
 				o_ctrl->prev_timestamp, o_ctrl->curr_timestamp);
 
-	// when the first vsync arrived, clear data-ready, and return.
+	// when the first vsync arrived, return.
 	if (o_ctrl->is_first_vsync) {
 		o_ctrl->is_first_vsync = 0;
-		rc = cam_ois_clear_data_ready(o_ctrl);
-		udelay(1000);
 		rc = -EINVAL;
 		goto release_mutex;
 	}
@@ -266,6 +264,7 @@ static irqreturn_t cam_ois_vsync_irq_thread(int irq, void *data)
 		if (packet_cnt > 0 && packet_cnt < MAX_PACKET)
 			read_buff += PACKET_BYTE;
 
+		// check 0x70DA = 1
 		for (i = 0; i < READ_COUNT; i++) {
 			rc = camera_io_dev_read(
 				&o_ctrl->io_master_info,
@@ -284,7 +283,7 @@ static irqreturn_t cam_ois_vsync_irq_thread(int irq, void *data)
 				CAM_DBG(CAM_OIS, "data_ready == 0x0001, i = %d", i);
 				break;
 			} else if (data_ready != DATA_READY && i < (READ_COUNT - 1)) {
-				CAM_WARN(CAM_OIS, "data_ready 0x%x != 0x0001, i = %d", data_ready, i);
+				CAM_DBG(CAM_OIS, "data_ready 0x%x != 0x0001, i = %d", data_ready, i);
 				udelay(1000);
 			} else {
 				CAM_ERR(CAM_OIS, "data_ready 0x%x check fail, i = %d", data_ready, i);
@@ -293,6 +292,7 @@ static irqreturn_t cam_ois_vsync_irq_thread(int irq, void *data)
 			}
 		}
 
+		// read 1 packet data
 		rc = camera_io_dev_read_seq(
 			&o_ctrl->io_master_info,
 			PACKET_ADDR,
@@ -327,15 +327,10 @@ static irqreturn_t cam_ois_vsync_irq_thread(int irq, void *data)
 			}
 		}
 
-		if (sample_cnt > 10 && packet_cnt > 1) {
-			CAM_DBG(CAM_OIS,"more than 1 packet, clear data-ready and read next packet, sample_cnt = %d, packet_cnt = %d",
-						sample_cnt, packet_cnt);
-			rc = cam_ois_clear_data_ready(o_ctrl);
-			udelay(1000);
-			if (rc < 0) {
-				CAM_ERR(CAM_OIS,"Write failed rc: %d", rc);
-				goto release_mutex;
-			}
+		rc = cam_ois_clear_data_ready(o_ctrl);
+		if (rc < 0) {
+			CAM_ERR(CAM_OIS,"Write failed rc: %d", rc);
+			goto release_mutex;
 		}
 
 		packet_cnt--;

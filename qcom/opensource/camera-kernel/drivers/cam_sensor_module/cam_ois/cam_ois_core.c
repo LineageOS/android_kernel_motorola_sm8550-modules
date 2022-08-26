@@ -1520,10 +1520,13 @@ int cam_ois_driver_cmd(struct cam_ois_ctrl_t *o_ctrl, void *arg)
 			"Not in right state for stop : %d",
 			o_ctrl->cam_ois_state);
 		}
+#ifdef CONFIG_DONGWOON_OIS_VSYNC
+		o_ctrl->is_first_vsync = 1;
+#endif
 		o_ctrl->cam_ois_state = CAM_OIS_CONFIG;
 		break;
 	default:
-		CAM_ERR(CAM_OIS, "invalid opcode");
+		CAM_INFO(CAM_OIS, "invalid opcode %d", cmd->op_code);
 		goto release_mutex;
 	}
 release_mutex:

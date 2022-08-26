@@ -37,7 +37,7 @@
 #define MAX_PACKET 5
 #define MAX_SAMPLE 50
 
-#define READ_COUNT 3
+#define READ_COUNT 6
 #define DATA_READY_ADDR 0x70DA
 #define DATA_READY 0x0001
 
