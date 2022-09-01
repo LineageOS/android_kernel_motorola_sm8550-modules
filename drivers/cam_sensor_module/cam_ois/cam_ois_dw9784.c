@@ -334,6 +334,8 @@ int dw9784_check_fw_download(struct camera_io_master * io_master_info, const uin
 
 		/* download firmware, check if need update, download firmware to flash */
 		if (needDownload || ((fw_version_current & 0xFF) != (fw_version_latest & 0xFF))) {
+			needDownload = 1;
+
 			CAM_INFO(CAM_OIS, "[dw9784] start flash download:: size:%d, version:0x%x needDownload %d",
 			                 g_dw9784FirmwareContext.size, g_dw9784FirmwareContext.version, needDownload);
 
