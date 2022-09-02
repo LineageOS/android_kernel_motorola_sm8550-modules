@@ -4488,6 +4488,12 @@ static int dsi_panel_parse_local_hbm_config(struct dsi_panel *panel)
 	return 0;
 }
 
+static void dsi_panel_lhbm_config_deinit(struct dsi_panel_lhbm_config *lhbm_config)
+{
+	if (lhbm_config->alpha)
+		kfree(lhbm_config->alpha);
+}
+
 static int dsi_panel_parse_cellid_config(struct dsi_panel *panel)
 {
 	int rc = 0;
@@ -4964,6 +4970,7 @@ void dsi_panel_put(struct dsi_panel *panel)
 	/* free resources allocated for ESD check */
 	dsi_panel_esd_config_deinit(&panel->esd_config);
 	dsi_panel_cellid_config_deinit(&panel->cellid_config);
+	dsi_panel_lhbm_config_deinit(&panel->lhbm_config);
 
 	kfree(panel->avr_caps.avr_step_fps_list);
 	kfree(panel);
