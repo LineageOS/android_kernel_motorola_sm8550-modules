@@ -234,6 +234,14 @@ struct drm_panel_esd_config {
 	u32 groups;
 };
 
+struct drm_panel_cellid_config {
+	bool cellid_enabled;
+
+	struct dsi_panel_cmd_set cellid_cmd;
+	u32 cellid_rlen;
+	u8 *return_buf;
+};
+
 struct dsi_panel_spr_info {
 	bool enable;
 	enum msm_display_spr_pack_type pack_type;
@@ -356,6 +364,8 @@ struct dsi_panel {
 	struct drm_panel_esd_config esd_config;
 
 	struct dsi_panel_lhbm_config lhbm_config;
+
+	struct drm_panel_cellid_config cellid_config;
 
 	struct dsi_parser_utils utils;
 
@@ -564,4 +574,5 @@ int dsi_panel_get_elvss_data_1(struct dsi_panel *panel);
 int dsi_panel_set_elvss_dim_off(struct dsi_panel *panel, u8 val);
 int dsi_panel_parse_elvss_config(struct dsi_panel *panel, u8 elv_vl);
 int dsi_panel_dfps_send_cmd(struct dsi_panel *panel);
+int dsi_panel_tx_cellid_cmd(struct dsi_panel *panel);
 #endif /* _DSI_PANEL_H_ */

@@ -6628,18 +6628,47 @@ static ssize_t panelBLExponent_show(struct device *device,
 	    return scnprintf(buf, PAGE_SIZE, "%s\n", "Not a DSI panel");
 }
 
+static int dsi_display_read_cellid(struct dsi_display *display)
+{
+	struct dsi_display *dsi_display = display;
+	struct dsi_panel *panel;
+	ssize_t len;
+	int rc = 0;
+
+	if (!dsi_display || !dsi_display->panel)
+		return -EINVAL;
+
+	panel = dsi_display->panel;
+
+	pr_info("%s ++\n", __func__);
+
+	rc = dsi_panel_tx_cellid_cmd(panel);
+	if (rc) {
+		pr_err("%s dsi_panel_tx_cellid_cmd failed\n", __func__);
+	} else {
+		len = (panel->cellid_config.cellid_rlen > MAX_PANEL_CELLID) ?
+							 MAX_PANEL_CELLID : panel->cellid_config.cellid_rlen;
+		memcpy(dsi_display->cellid,  panel->cellid_config.return_buf, len);
+	}
+	return rc;
+}
+
 static ssize_t panelCellId_show(struct device *device,
 	struct device_attribute *attr, char *buf)
 {
 	struct drm_connector *conn;
 	struct sde_connector *sde_conn;
 	struct dsi_display *dsi_display;
+	struct dsi_panel *panel;
+
+	u8 *cellid;
+	int i, j;
+	ssize_t len=0, cellid_len = 0;
 
 	char char_num[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
 	char char_cha[] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S',
 		'T', 'U', 'V', 'W', 'X', 'Y', 'Z'};
-	int i,j;
-	ssize_t len = 0;
+
 
 	if (!device || !buf) {
 		SDE_ERROR("invalid input param(s)\n");
@@ -6649,35 +6678,27 @@ static ssize_t panelCellId_show(struct device *device,
 	conn = dev_get_drvdata(device);
 	sde_conn = to_sde_connector(conn);
 	dsi_display = sde_conn->display;
-	dsi_display_read_8s(dsi_display);
+	panel = dsi_display->panel;
 
-	for (i = 13; i<36; i++) {
-		if (dsi_display->cellid[i]>=0x30 && dsi_display->cellid[i]<=0x39) {
-			j = dsi_display->cellid[i]-0x30;
-			if (i == 35)
-				len += snprintf(buf + len, PAGE_SIZE - len, "%c\n",char_num[j]);
-			else
-				len += snprintf(buf + len, PAGE_SIZE - len, "%c",char_num[j]);
-		} else if (dsi_display->cellid[i]>=0x41 && dsi_display->cellid[i]<=0x5A){
-			j = dsi_display->cellid[i]-0x41;
-			if (i == 35)
-				len += snprintf(buf + len, PAGE_SIZE - len, "%c\n",char_cha[j]);
-			else
-				len += snprintf(buf + len, PAGE_SIZE - len, "%c",char_cha[j]);
+	dsi_display_read_cellid(dsi_display);
+
+
+	cellid_len = (panel->cellid_config.cellid_rlen > MAX_PANEL_CELLID) ?
+							 MAX_PANEL_CELLID : panel->cellid_config.cellid_rlen;
+	cellid = panel->cellid_config.return_buf;
+
+	for (i = 0; i< cellid_len; i++) {
+		if (cellid[i]>=0x30 && cellid[i]<=0x39) {
+			j = cellid[i]-0x30;
+			len += snprintf(buf + len, PAGE_SIZE - len, "%c",char_num[j]);
+		} else if (cellid[i]>=0x41 && cellid[i]<=0x5A){
+			j = cellid[i]-0x41;
+			len += snprintf(buf + len, PAGE_SIZE - len, "%c",char_cha[j]);
 		}
 	}
-#if 0
-	seq_printf(m, "0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x\n",
-		cellid[0], cellid[1], cellid[2], cellid[3], cellid[4], cellid[5],
-		cellid[6], cellid[7], cellid[8], cellid[9], cellid[10], cellid[11]); //12
-	seq_printf(m, "0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x\n",
-		cellid[12], cellid[13], cellid[14], cellid[15], cellid[16], cellid[17],
-		cellid[18], cellid[19], cellid[20]); //9
-	seq_printf(m, "0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x\n",
-		cellid[21], cellid[22], cellid[23], cellid[24], cellid[25], cellid[26],
-		cellid[27], cellid[28], cellid[29], cellid[30]); //10
-#endif
-	return len;//snprintf(buf, PAGE_SIZE, "%s\n", m);
+	len += snprintf(buf + len, PAGE_SIZE - len, "\n");
+
+	return len;
 }
 
 static ssize_t panelDC_show(struct device *device,

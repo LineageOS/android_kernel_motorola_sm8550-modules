@@ -2520,6 +2520,7 @@ const char *cmd_set_prop_map[DSI_CMD_SET_MAX] = {
 	"qcom,mdss-dsi-dfps-90-command",
 	"qcom,mdss-dsi-dfps-120-command",
 	"qcom,mdss-dsi-dfps-144-command",
+	"qcom,mdss-dsi-panel-cellid-command",
 };
 
 const char *cmd_set_state_map[DSI_CMD_SET_MAX] = {
@@ -2568,6 +2569,7 @@ const char *cmd_set_state_map[DSI_CMD_SET_MAX] = {
 	"qcom,mdss-dsi-dfps-90-command-state",
 	"qcom,mdss-dsi-dfps-120-command-state",
 	"qcom,mdss-dsi-dfps-144-command-state",
+	"qcom,mdss-dsi-panel-cellid-command-state",
 };
 
 int dsi_panel_get_cmd_pkt_count(const char *data, u32 length, u32 *cnt)
@@ -4346,6 +4348,64 @@ static int dsi_panel_parse_local_hbm_config(struct dsi_panel *panel)
 	return 0;
 }
 
+static int dsi_panel_parse_cellid_config(struct dsi_panel *panel)
+{
+	int rc = 0;
+	struct drm_panel_cellid_config *cellid_config;
+	struct dsi_parser_utils *utils = &panel->utils;
+
+	if (!panel) {
+		DSI_ERR("Invalid Params\n");
+		return -EINVAL;
+	}
+
+	cellid_config = &panel->cellid_config;
+	if (!cellid_config)
+		return -EINVAL;
+
+	cellid_config->cellid_enabled = utils->read_bool(utils->data,
+		"qcom,cellid-read-enabled");
+
+	if (!cellid_config->cellid_enabled)
+		return 0;
+
+	dsi_panel_parse_cmd_sets_sub(&cellid_config->cellid_cmd,
+				DSI_CMD_SET_PANEL_CELLID, utils);
+	if (!cellid_config->cellid_cmd.count) {
+		DSI_ERR("panel cellid command parsing failed\n");
+		rc = -EINVAL;
+		goto error;
+	}
+
+	rc = utils->read_u32(utils->data,
+		"qcom,mdss-dsi-panel-cellid-read-length",
+		&(cellid_config->cellid_rlen));
+	if (rc) {
+		DSI_ERR("%s:qcom,mdss-dsi-panel-cellid-read-length, set it to 23\n", __func__);
+		cellid_config->cellid_rlen = 23;
+	}
+
+	cellid_config->return_buf = kcalloc(cellid_config->cellid_rlen,
+			sizeof(unsigned char), GFP_KERNEL);
+	if (!cellid_config->return_buf) {
+		DSI_ERR("%s:kcalloc for return_buf error \n", __func__);
+		rc = -ENOMEM;
+		goto error;
+	}
+
+	return 0;
+error:
+	cellid_config->cellid_enabled = false;
+	return rc;
+}
+
+static void dsi_panel_cellid_config_deinit(struct drm_panel_cellid_config *cellid_config)
+{
+	if (cellid_config->return_buf)
+		kfree(cellid_config->return_buf);
+}
+
+
 static void dsi_panel_update_util(struct dsi_panel *panel,
 				  struct device_node *parser_node)
 {
@@ -4723,6 +4783,10 @@ struct dsi_panel *dsi_panel_get(struct device *parent,
 	if (rc)
 		DSI_DEBUG("failed to parse local hbm config, rc=%d\n", rc);
 
+	rc = dsi_panel_parse_cellid_config(panel);
+	if (rc)
+		DSI_DEBUG("failed to parse local cellid config, rc=%d\n", rc);
+
 	rc = dsi_panel_vreg_get(panel);
 	if (rc) {
 		DSI_ERR("[%s] failed to get panel regulators, rc=%d\n",
@@ -4751,6 +4815,7 @@ void dsi_panel_put(struct dsi_panel *panel)
 
 	/* free resources allocated for ESD check */
 	dsi_panel_esd_config_deinit(&panel->esd_config);
+	dsi_panel_cellid_config_deinit(&panel->cellid_config);
 
 	kfree(panel->avr_caps.avr_step_fps_list);
 	kfree(panel);
@@ -6275,5 +6340,65 @@ int dsi_panel_dfps_send_cmd(struct dsi_panel *panel)
 	}
 	mutex_unlock(&panel->panel_lock);
 
+	return rc;
+}
+
+int dsi_panel_tx_cellid_cmd(struct dsi_panel *panel)
+{
+	int rc = 0, i = 0;
+	ssize_t len;
+	struct dsi_cmd_desc *cmds;
+	struct drm_panel_cellid_config *cellid_config;
+	enum dsi_cmd_set_state state;
+	u32 count;
+
+	if (!panel) {
+		DSI_ERR("Invalid Params\n");
+		return -EINVAL;
+	}
+
+	cellid_config = &panel->cellid_config;
+	if (!cellid_config) {
+		DSI_ERR("cellid_config is null\n");
+		return -EINVAL;
+	}
+
+	len = cellid_config->cellid_rlen;
+	count = cellid_config->cellid_cmd.count;
+	cmds = cellid_config->cellid_cmd.cmds;
+	state = cellid_config->cellid_cmd.state;
+
+	if (count == 0) {
+		DSI_DEBUG("[%s] No DSI_CMD_SET_PANEL_CELLID commands to be sent\n",
+			 panel->name);
+		goto error;
+	}
+
+	for (i = 0; i < count; i++) {
+		cmds->ctrl_flags = 0;
+
+		if (state == DSI_CMD_SET_STATE_LP)
+			cmds->msg.flags |= MIPI_DSI_MSG_USE_LPM;
+
+		if (cmds->msg.type == MIPI_DSI_DCS_READ) {
+			cmds->msg.flags |= MIPI_DSI_MSG_UNICAST_COMMAND;
+			cmds->msg.rx_buf = cellid_config->return_buf;
+			cmds->msg.rx_len = (cellid_config->cellid_rlen > MAX_PANEL_CELLID) ?
+							 MAX_PANEL_CELLID : cellid_config->cellid_rlen;
+			cmds->ctrl_flags = DSI_CTRL_CMD_READ;
+		}
+
+		len = dsi_host_transfer_sub(panel->host, cmds);
+		if (len < 0) {
+			rc = len;
+			DSI_ERR("failed to set DSI_CMD_SET_PANEL_CELLID  cmds, rc=%d\n", rc);
+			goto error;
+		}
+		if (cmds->post_wait_ms)
+			usleep_range(cmds->post_wait_ms*1000,
+					((cmds->post_wait_ms*1000)+10));
+		cmds++;
+	}
+error:
 	return rc;
 }
