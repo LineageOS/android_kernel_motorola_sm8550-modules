@@ -407,6 +407,7 @@ struct dsi_panel {
 	bool is_panel_dead;
        int paramVersion;
 	bool mot_nt37705A_read_cellid;
+	int dc_state;
 };
 
 bool dsi_display_all_displays_dead(void);
