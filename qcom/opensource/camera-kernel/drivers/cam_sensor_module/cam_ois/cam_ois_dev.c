@@ -22,6 +22,39 @@ struct completion *cam_ois_get_i3c_completion(uint32_t index)
 	return &g_i3c_ois_data[index].probe_complete;
 }
 
+#ifdef CONFIG_MOT_DONGWOON_OIS_AF_DRIFT
+static struct cam_ois_ctrl_t * g_o_ctrl = NULL;
+
+int cam_ois_write_af_drift(uint32_t dac)
+{
+	struct cam_ois_ctrl_t *o_ctrl = g_o_ctrl;
+	struct cam_sensor_i2c_reg_setting i2c_reg_setting = {NULL, 1, CAMERA_SENSOR_I2C_TYPE_WORD, CAMERA_SENSOR_I2C_TYPE_WORD, 0};
+	struct cam_sensor_i2c_reg_array i2c_write_settings = {0x7070, dac, 0, 0};
+	int rc = 0;
+
+	if (!o_ctrl) {
+		CAM_ERR(CAM_OIS, "invalid args");
+		return -EINVAL;
+	}
+
+	if (o_ctrl->cam_ois_state < CAM_OIS_CONFIG) {
+		CAM_WARN(CAM_OIS, "Not in right state to write af drift: %d", o_ctrl->cam_ois_state);
+		return -EINVAL;
+	}
+
+	i2c_reg_setting.reg_setting = &(i2c_write_settings);
+
+	rc = camera_io_dev_write(&(o_ctrl->io_master_info), &(i2c_reg_setting));
+	if (rc < 0) {
+		CAM_ERR(CAM_OIS, "fail in applying i2c wrt settings");
+		return -EINVAL;
+	}
+
+	CAM_DBG(CAM_OIS,"write af-drift success 0x%x", dac);
+	return rc;
+}
+#endif
+
 static int cam_ois_subdev_close_internal(struct v4l2_subdev *sd,
 	struct v4l2_subdev_fh *fh)
 {
@@ -569,6 +602,10 @@ static int cam_ois_component_bind(struct device *dev,
 
 	g_i3c_ois_data[o_ctrl->soc_info.index].o_ctrl = o_ctrl;
 	init_completion(&g_i3c_ois_data[o_ctrl->soc_info.index].probe_complete);
+
+#ifdef CONFIG_MOT_DONGWOON_OIS_AF_DRIFT
+	g_o_ctrl = o_ctrl;
+#endif
 
 #ifdef CONFIG_DONGWOON_OIS_VSYNC
 	mutex_init(&(o_ctrl->vsync_mutex));
