@@ -6676,6 +6676,28 @@ static ssize_t panelCellId_show(struct device *device,
 	return len;//snprintf(buf, PAGE_SIZE, "%s\n", m);
 }
 
+static ssize_t panelDC_show(struct device *device,
+	struct device_attribute *attr, char *buf)
+{
+	struct drm_connector *conn;
+	struct sde_connector *sde_conn;
+	struct dsi_display *dsi_display;
+
+	if (!device || !buf) {
+		SDE_ERROR("invalid input param(s)\n");
+		return -EAGAIN;
+	}
+
+	conn = dev_get_drvdata(device);
+	sde_conn = to_sde_connector(conn);
+	dsi_display = sde_conn->display;
+
+	if (sde_conn->connector_type == DRM_MODE_CONNECTOR_DSI)
+	    return scnprintf(buf, PAGE_SIZE, "%d\n", dsi_display->panel->dc_state);
+	else
+	    return scnprintf(buf, PAGE_SIZE, "%s\n", "Not a DSI panel");
+}
+
 
 static DEVICE_ATTR_RO(panelId);
 static DEVICE_ATTR_RO(panelVer);
@@ -6684,6 +6706,8 @@ static DEVICE_ATTR_RO(panelRegDA);
 static DEVICE_ATTR_RO(panelSupplier);
 static DEVICE_ATTR_RO(panelBLExponent);
 static DEVICE_ATTR_RO(panelCellId);
+static DEVICE_ATTR_RO(panelDC);
+
 
 static const struct attribute *sde_conn_panel_attrs[] = {
 	&dev_attr_panelId.attr,
@@ -6693,6 +6717,7 @@ static const struct attribute *sde_conn_panel_attrs[] = {
 	&dev_attr_panelSupplier.attr,
 	&dev_attr_panelBLExponent.attr,
 	&dev_attr_panelCellId.attr,
+	&dev_attr_panelDC.attr,
 	NULL
 };
 
