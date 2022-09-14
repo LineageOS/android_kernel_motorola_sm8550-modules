@@ -6669,7 +6669,6 @@ static ssize_t panelCellId_show(struct device *device,
 	char char_cha[] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S',
 		'T', 'U', 'V', 'W', 'X', 'Y', 'Z'};
 
-
 	if (!device || !buf) {
 		SDE_ERROR("invalid input param(s)\n");
 		return -EAGAIN;
@@ -6679,15 +6678,16 @@ static ssize_t panelCellId_show(struct device *device,
 	sde_conn = to_sde_connector(conn);
 	dsi_display = sde_conn->display;
 	panel = dsi_display->panel;
+	if(panel->bl_config.bl_level <= 0)
+		return len;
 
 	dsi_display_read_cellid(dsi_display);
-
 
 	cellid_len = (panel->cellid_config.cellid_rlen > MAX_PANEL_CELLID) ?
 							 MAX_PANEL_CELLID : panel->cellid_config.cellid_rlen;
 	cellid = panel->cellid_config.return_buf;
 
-	for (i = 0; i< cellid_len; i++) {
+	for (i = panel->cellid_config.cellid_offset; i< cellid_len; i++) {
 		if (cellid[i]>=0x30 && cellid[i]<=0x39) {
 			j = cellid[i]-0x30;
 			len += snprintf(buf + len, PAGE_SIZE - len, "%c",char_num[j]);

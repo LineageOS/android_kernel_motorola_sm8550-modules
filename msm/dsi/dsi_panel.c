@@ -4385,6 +4385,14 @@ static int dsi_panel_parse_cellid_config(struct dsi_panel *panel)
 		cellid_config->cellid_rlen = 23;
 	}
 
+	rc = utils->read_u32(utils->data,
+		"qcom,mdss-dsi-panel-cellid-offset",
+		&(cellid_config->cellid_offset));
+	if (rc) {
+		DSI_ERR("%s:qcom,mdss-dsi-panel-cellid-offset, set it to 0\n", __func__);
+		cellid_config->cellid_offset = 0;
+	}
+
 	cellid_config->return_buf = kcalloc(cellid_config->cellid_rlen,
 			sizeof(unsigned char), GFP_KERNEL);
 	if (!cellid_config->return_buf) {

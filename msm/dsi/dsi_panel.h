@@ -239,6 +239,7 @@ struct drm_panel_cellid_config {
 
 	struct dsi_panel_cmd_set cellid_cmd;
 	u32 cellid_rlen;
+	u32 cellid_offset;
 	u8 *return_buf;
 };
 
