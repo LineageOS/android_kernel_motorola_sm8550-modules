@@ -411,6 +411,7 @@ struct dsi_panel {
 	bool mot_nt37705A_read_cellid;
 	int dc_state;
 	int panel_power_cnt;
+	struct msm_param_info curDCModeParaInfo;
 };
 
 bool dsi_display_all_displays_dead(void);
