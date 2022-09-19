@@ -9662,6 +9662,12 @@ int dsi_display_enable(struct dsi_display *display)
 			goto error;
 		}
 
+		if ((display->panel->dfps_caps.dfps_send_cmd_support) &&
+			(mode->timing.refresh_rate != display->panel->dfps_caps.panel_on_fps)) {
+			DSI_INFO("[%s] current_refresh_rate %d panel_on_fps %d\n", __func__, mode->timing.refresh_rate, display->panel->dfps_caps.panel_on_fps);
+			dsi_panel_dfps_send_cmd(display->panel);
+		}
+
 		dsi_display_enable_status(display, true);
 	}
 	dsi_display_panel_id_notification(display);
