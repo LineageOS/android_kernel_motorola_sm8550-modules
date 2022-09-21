@@ -1303,6 +1303,9 @@ int32_t cam_sensor_driver_cmd(struct cam_sensor_ctrl_t *s_ctrl,
 		 */
 		s_ctrl->is_probe_succeed = 1;
 		s_ctrl->sensor_state = CAM_SENSOR_INIT;
+#ifdef CONFIG_MOT_SENSOR_PRE_POWERUP
+		s_ctrl->sensor_power_up_done = 0;
+#endif
 
 		CAM_INFO(CAM_SENSOR,
 				"Probe success for %s slot:%d,slave_addr:0x%x,sensor_id:0x%x",
@@ -1640,6 +1643,26 @@ int32_t cam_sensor_driver_cmd(struct cam_sensor_ctrl_t *s_ctrl,
 		}
 	}
 		break;
+#ifdef CONFIG_MOT_SENSOR_PRE_POWERUP
+	case CAM_MOT_PRE_POWER_UP: {
+		if (!s_ctrl->sensor_power_up_done)
+		{
+			rc = cam_sensor_power_up(s_ctrl);
+			if (rc < 0) {
+				CAM_ERR(CAM_SENSOR,
+					"MotPreAct - Sensor Power up failed for %s sensor_id:0x%x, slave_addr:0x%x",
+					s_ctrl->sensor_name,
+					s_ctrl->sensordata->slave_info.sensor_id,
+					s_ctrl->sensordata->slave_info.sensor_slave_addr
+					);
+				goto release_mutex;
+			}
+
+			s_ctrl->sensor_power_up_done = 1;
+		}
+	}
+		break;
+#endif
 	default:
 		CAM_ERR(CAM_SENSOR, "%s: Invalid Opcode: %d",
 			s_ctrl->sensor_name, cmd->op_code);
@@ -1755,6 +1778,14 @@ int cam_sensor_power_up(struct cam_sensor_ctrl_t *s_ctrl)
 	if (s_ctrl->hw_no_ops)
 		return rc;
 
+#ifdef CONFIG_MOT_SENSOR_PRE_POWERUP
+	if (s_ctrl->sensor_power_up_done)
+	{
+		CAM_INFO(CAM_SENSOR, "MotPreAct - sensor[%s] has power up done.", s_ctrl->sensor_name);
+		return 0;
+	}
+#endif
+
 	power_info = &s_ctrl->sensordata->power_info;
 	slave_info = &(s_ctrl->sensordata->slave_info);
 
@@ -1868,6 +1899,10 @@ int cam_sensor_power_down(struct cam_sensor_ctrl_t *s_ctrl)
 	}
 
 	camera_io_release(&(s_ctrl->io_master_info));
+
+#ifdef CONFIG_MOT_SENSOR_PRE_POWERUP
+	s_ctrl->sensor_power_up_done = 0;
+#endif
 
 	return rc;
 }
