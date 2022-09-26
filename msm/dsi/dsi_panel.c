@@ -5909,13 +5909,22 @@ int dsi_panel_enable(struct dsi_panel *panel)
 	u8 pwr_mode;
 	struct dsi_display *dsi_display = container_of(panel->host,
 										struct dsi_display, host);
+	struct timespec64 timestampStart, timestampEnd, dts;
+	struct tm tm;
+	char buff[255];
 
 	if (!panel) {
 		DSI_ERR("Invalid params\n");
 		return -EINVAL;
 	}
 
-	DSI_INFO("(%s)+\n", panel->name);
+	ktime_get_real_ts64(&timestampStart);
+	time64_to_tm(timestampStart.tv_sec, 0, &tm);
+	snprintf(buff, sizeof(buff), "%u-%02d-%02d %02d:%02d:%02d.%06ld UTC",
+		(int) tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour,
+		tm.tm_min, tm.tm_sec, timestampStart.tv_nsec);
+
+	DSI_INFO("(%s)+ at: %s\n", panel->name, buff);
 	mutex_lock(&panel->panel_lock);
 
 	rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_ON);
@@ -5974,10 +5983,15 @@ int dsi_panel_enable(struct dsi_panel *panel)
 			DSI_INFO("Pwr_mode(0x0A) = 0x%x\n", pwr_mode);
 			panel->panel_recovery_retry = 0;
 		}
-	} else
-		DSI_INFO("-: no_panel_on_read_support is set\n");
+	}
+
+	ktime_get_real_ts64(&timestampEnd);
+	dts = timespec64_sub(timestampEnd, timestampStart);
+	DSI_INFO("-: no_panel_on_read_support=%d, panel_power_cnt=%d, took %ld ms\n",
+		panel->no_panel_on_read_support, panel->panel_power_cnt, timespec64_to_ns(&dts)/1000000);
 
 	panel->panel_initialized = true;
+	panel->panel_power_cnt++;
 
 	PANEL_NOTIFY(PANEL_EVENT_PRE_DISPLAY_ON);
 error:
