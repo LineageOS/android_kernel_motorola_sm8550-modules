@@ -706,6 +706,7 @@ static int dsi_panel_update_backlight(struct dsi_panel *panel,
 	struct mipi_dsi_device *dsi = NULL;
 	struct dsi_backlight_config *bl = &panel->bl_config;
 	u32 bl_lvl_2bytes;
+	bool isFirstPositive = false;
 
 	if (!panel || (bl_lvl > 0xffff)) {
 		DSI_ERR("invalid params\n");
@@ -718,14 +719,24 @@ static int dsi_panel_update_backlight(struct dsi_panel *panel,
 		dsi->mode_flags |= MIPI_DSI_MODE_LPM;
 	}
 
+	if (!panel->bl_config.brightness_updated && bl_lvl)
+		isFirstPositive = true;
+	panel->bl_config.brightness_updated = bl_lvl;
+
 	if (panel->bl_config.bl_inverted_dbv)
 		bl_lvl = (((bl_lvl & 0xff) << 8) | (bl_lvl >> 8));
 
-        if (bl->bl_2bytes_enable){
-                bl_lvl_2bytes =  ((bl_lvl & 0xff00) >> 8) | ((bl_lvl & 0xff) << 8);
-                rc = mipi_dsi_dcs_set_display_brightness(dsi, bl_lvl_2bytes);
-        }else
+       if (bl->bl_2bytes_enable){
+		bl_lvl_2bytes =  ((bl_lvl & 0xff00) >> 8) | ((bl_lvl & 0xff) << 8);
+		bl_lvl = bl_lvl_2bytes;
+       }
+	rc = mipi_dsi_dcs_set_display_brightness(dsi, bl_lvl);
+
+       // Workaround for the panel which failed to set the first postive brightness value
+	if (panel->bl_config.bl_double_write && isFirstPositive) {
+		pr_info("set_backlight double wirte lvl:%d\n", panel->bl_config.brightness_updated);
 		rc = mipi_dsi_dcs_set_display_brightness(dsi, bl_lvl);
+	}
 
 	if (rc < 0)
 		DSI_ERR("failed to update dcs backlight:%d\n", bl_lvl);
@@ -851,7 +862,7 @@ int dsi_panel_set_backlight(struct dsi_panel *panel, u32 bl_lvl)
 
 	if(panel->lhbm_config.enable) {
 		panel->lhbm_config.dbv_level = bl_lvl;
-		DSI_INFO("backlight type:%d dbv lvl:%d\n", bl->type, bl_lvl);
+		DSI_DEBUG("backlight type:%d dbv lvl:%d\n", bl->type, bl_lvl);
 	}
 
 	if (dsi_panel_set_hbm_backlight(panel, &bl_lvl))
@@ -3183,8 +3194,11 @@ static int dsi_panel_parse_bl_config(struct dsi_panel *panel)
 	panel->bl_config.bl_is_exponent = utils->read_bool(utils->data,
 			"qcom,mdss-dsi-bl-is-exponent");
 
-	DSI_INFO("[%s] bl_2bytes_enable=%d, bl_is_exponent=%d\n", panel->name,
-			panel->bl_config.bl_2bytes_enable, panel->bl_config.bl_is_exponent );
+	panel->bl_config.bl_double_write = utils->read_bool(utils->data,
+			"qcom,mdss-dsi-bl-double-write");
+
+	DSI_INFO("[%s] bl_2bytes_enable=%d, bl_is_exponent=%d, bl_double_write=%d\n", panel->name,
+			panel->bl_config.bl_2bytes_enable, panel->bl_config.bl_is_exponent, panel->bl_config.bl_double_write);
 
 	if (panel->bl_config.type == DSI_BACKLIGHT_PWM) {
 		rc = dsi_panel_parse_bl_pwm_config(panel);
