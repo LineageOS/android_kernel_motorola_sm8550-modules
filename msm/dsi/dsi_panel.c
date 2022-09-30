@@ -2266,7 +2266,7 @@ static int dsi_panel_parse_dfps_caps(struct dsi_panel *panel)
 	}
 
 	dfps_caps->dfps_send_cmd_support = utils->read_bool(utils->data,
-			"qcom,mdss-dsi-pan-dpfs-send-command");
+			"qcom,mdss-dsi-pan-dfps-send-command");
 	if(dfps_caps->dfps_send_cmd_support) {
 		rc = utils->read_u32(utils->data, "qcom,mdss-dsi-pan-on-fps", &val);
 		if (rc) {
