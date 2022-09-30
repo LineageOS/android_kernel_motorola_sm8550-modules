@@ -26,16 +26,16 @@ extern void dw9784_post_firmware_download(struct camera_io_master * io_master_in
 extern int dw9784_check_if_download(struct camera_io_master * io_master_info);
 
 #ifdef CONFIG_MOT_DONGWOON_OIS_AF_DRIFT
-int m_ois_stream_on = 0;
+int m_ois_init = 0;
 
-int cam_ois_get_stream_info(void)
+int cam_ois_get_init_info(void)
 {
-	return m_ois_stream_on;
+	return m_ois_init;
 }
 
-static void cam_ois_set_stream_info(int value)
+static void cam_ois_set_init_info(int value)
 {
-	m_ois_stream_on = value;
+	m_ois_init = value;
 }
 #endif
 
@@ -243,6 +243,11 @@ static int cam_ois_power_down(struct cam_ois_ctrl_t *o_ctrl)
 	}
 
 	CAM_INFO(CAM_OIS, "OIS power down successed");
+
+#ifdef CONFIG_MOT_DONGWOON_OIS_AF_DRIFT
+	if (strstr(o_ctrl->ois_name, "dw9784"))
+		cam_ois_set_init_info(0);
+#endif
 
 	camera_io_release(&o_ctrl->io_master_info);
 	o_ctrl->cam_ois_state = CAM_OIS_ACQUIRE;
@@ -950,6 +955,11 @@ static int cam_ois_pkt_parse(struct cam_ois_ctrl_t *o_ctrl, void *arg)
 			CAM_DBG(CAM_OIS, "apply Init settings success");
 		}
 
+#ifdef CONFIG_MOT_DONGWOON_OIS_AF_DRIFT
+		if (strstr(o_ctrl->ois_name, "dw9784"))
+			cam_ois_set_init_info(1);
+#endif
+
 		if (o_ctrl->is_ois_calib) {
 			rc = cam_ois_apply_settings(o_ctrl,
 				&o_ctrl->i2c_calib_data);
@@ -1459,11 +1469,6 @@ int cam_ois_driver_cmd(struct cam_ois_ctrl_t *o_ctrl, void *arg)
 			goto release_mutex;
 		}
 
-#ifdef CONFIG_MOT_DONGWOON_OIS_AF_DRIFT
-		if (strstr(o_ctrl->ois_name, "dw9784"))
-			cam_ois_set_stream_info(1);
-#endif
-
 		o_ctrl->cam_ois_state = CAM_OIS_START;
 		break;
 	case CAM_CONFIG_DEV:
@@ -1543,11 +1548,6 @@ int cam_ois_driver_cmd(struct cam_ois_ctrl_t *o_ctrl, void *arg)
 		}
 #ifdef CONFIG_DONGWOON_OIS_VSYNC
 		o_ctrl->is_first_vsync = 1;
-#endif
-
-#ifdef CONFIG_MOT_DONGWOON_OIS_AF_DRIFT
-		if (strstr(o_ctrl->ois_name, "dw9784"))
-			cam_ois_set_stream_info(0);
 #endif
 
 		o_ctrl->cam_ois_state = CAM_OIS_CONFIG;
