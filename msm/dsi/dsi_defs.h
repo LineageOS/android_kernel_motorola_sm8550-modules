@@ -486,6 +486,8 @@ struct dsi_mode_info {
 	struct msm_ratio pclk_scale;
 	struct msm_roi_caps roi_caps;
 	u32 qsync_min_fps;
+	// Motorola zhanggb, add refreshrate group, IKSWT-18219
+	u32 refresh_rate_group_flag;
 };
 
 /**

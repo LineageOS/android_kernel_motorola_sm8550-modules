@@ -1579,6 +1579,20 @@ static int dsi_panel_parse_timing(struct dsi_mode_info *mode,
 		mode->mdp_transfer_time_us = 0;
 	priv_info->mdp_transfer_time_us = mode->mdp_transfer_time_us;
 
+	// BEGIN Motorola zhanggb, 10/18/2022, IKSWT-18219
+	mode->refresh_rate_group_flag = 0;
+	if(utils->read_bool(utils->data, "qcom,framerate-group-no-duplicated"))
+	    mode->refresh_rate_group_flag |= RRGSFlag_All_No_Duplicated;
+	if(utils->read_bool(utils->data, "qcom,framerate-group-120hz-based"))
+	    mode->refresh_rate_group_flag |= RRGSFlag_120HzBased;
+	if(utils->read_bool(utils->data, "qcom,framerate-group-90hz-based"))
+	    mode->refresh_rate_group_flag |= RRGSFlag_90HzBased;
+	if(utils->read_bool(utils->data, "qcom,framerate-group-special-idle-1hz"))
+	    mode->refresh_rate_group_flag |= RRGSFlag_Special_Idle_1Hz;
+	if(utils->read_bool(utils->data, "qcom,framerate-group-special-idle-10hz"))
+	    mode->refresh_rate_group_flag |= RRGSFlag_Special_Idle_10Hz;
+	// END Motorola zhanggb, IKSWT-18219
+
 	rc = utils->read_u32(utils->data, "qcom,mdss-dsi-panel-width",
 				  &mode->h_active);
 	if (rc) {
@@ -1620,9 +1634,9 @@ static int dsi_panel_parse_timing(struct dsi_mode_info *mode,
 		DSI_DEBUG("qcom,mdss-dsi-h-sync-skew is not defined, rc=%d\n",
 				rc);
 
-	DSI_DEBUG("panel horz active:%d front_portch:%d back_porch:%d sync_skew:%d\n",
+	DSI_INFO("panel horz active:%d front_portch:%d back_porch:%d sync_skew:%d, refreshrate:%d:0x%x\n",
 		mode->h_active, mode->h_front_porch, mode->h_back_porch,
-		mode->h_sync_width);
+		mode->h_sync_width, mode->refresh_rate, mode->refresh_rate_group_flag);
 
 	rc = utils->read_u32(utils->data, "qcom,mdss-dsi-panel-height",
 				  &mode->v_active);

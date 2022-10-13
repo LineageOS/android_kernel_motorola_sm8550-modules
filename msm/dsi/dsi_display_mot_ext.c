@@ -69,10 +69,13 @@ static enum alarmtimer_restart dsi_display_wakeup_timer_func(struct alarm *alarm
 	return ALARMTIMER_NORESTART;
 }
 
-static int my_atoi(const char *src)
+int mot_atoi(const char *src)
 {
       int s = 0;
       bool isMinus = false;
+
+      if (!src)
+          return 0;
 
       while(*src == ' ')
       {
@@ -627,7 +630,7 @@ static bool dsi_panel_mot_parse_u32(char* str, const char* keystr, u32* val)
 				strncpy(buf, posStart, len);
 				buf[len] = 0;
 				//pr_info("val str : %s\n", buf);
-				*val = my_atoi(buf);
+				*val = mot_atoi(buf);
 			} else {
 				pr_err(" > not found in this line!\n");
 				goto error_exit;
