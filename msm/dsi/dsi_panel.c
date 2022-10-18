@@ -2928,6 +2928,9 @@ static int dsi_panel_parse_misc_features(struct dsi_panel *panel)
 	panel->reset_gpio_always_on = utils->read_bool(utils->data,
 			"qcom,platform-reset-gpio-always-on");
 
+	panel->need_execute_shutdown = utils->read_bool(utils->data,
+			"qcom,platform-need-execute-shutdown");
+
 	panel->spr_info.enable = false;
 	panel->spr_info.pack_type = MSM_DISPLAY_SPR_TYPE_MAX;
 
