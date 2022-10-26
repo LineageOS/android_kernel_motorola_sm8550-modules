@@ -89,7 +89,10 @@ typedef struct moto_product {
 } moto_product;
 
 static moto_product products_list[] = {
-	{"rtwo",	"all",	NV_EPA},
+	{"rtwo",	"NA",	"na.epa"},
+	{"rtwo",        "PRC",  "prc.epa"},
+	{"rtwo",        "ROW",  "row.epa"},
+	{"rtwo",        "VZW",  "vzw.epa"},
 	/* Terminator */
 	{{0}, {0}, {0}},
 };
