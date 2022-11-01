@@ -6475,7 +6475,7 @@ void dsi_display_dev_shutdown(struct platform_device *pdev)
 		if (rc)
 			DSI_WARN("set dir for panel test gpio failed rc=%d\n", rc);
 	}
-
+	mdelay(5);
 	rc = dsi_pwr_enable_regulator(&panel->power_info, false);
 	if (rc)
 		DSI_ERR("[%s] failed to enable vregs, rc=%d\n", panel->name, rc);
