@@ -44,6 +44,7 @@
 static struct alarm *g_wakeup_timer = NULL;
 static int g_wakeup_timer_interval = 0;
 static int g_pressure_test_en = 0;
+static int g_te_irq_cal_period = 0;  /* Default 1000000us */
 
 static int g_param_id_flag = 0;  //Decimal:  PanelParmId=g_param_id_flag/100   DisplaModeCmdId=g_param_id_flag%100
 
@@ -903,6 +904,86 @@ timing_err_exit:
 	return ret;
 }
 
+
+static u64 g_teCount = 0;
+static ktime_t last_time_us = 0;
+static irqreturn_t dsi_display_panel_te_irq_handler_ext(int irq, void *data)
+{
+	ktime_t current_time_us;
+	u64 fps, diff_us;
+
+	current_time_us = ktime_get();
+	diff_us = (u64)ktime_us_delta(current_time_us, last_time_us);
+	g_teCount++;
+
+	if (diff_us >= g_te_irq_cal_period) {
+		 /* Multiplying with 10 to get fps in floating point */
+		fps = ((u64)g_teCount) * 1000000 * 10;
+		do_div(fps, diff_us);
+		DSI_INFO("FPS for last (%dms, %d frames) is %d.%d\n",
+				diff_us/1000, g_teCount, (unsigned int)fps/10, (unsigned int)fps%10);
+		last_time_us = current_time_us;
+		g_teCount = 0;
+	}
+
+	return IRQ_HANDLED;
+}
+
+static void dsi_display_te_irq_en(struct dsi_display *display, bool en)
+{
+	int rc = 0;
+	struct platform_device *pdev;
+	struct device *dev;
+	unsigned int te_irq;
+
+	pdev = display->pdev;
+	if (!pdev) {
+		pr_err("%s: invalid platform device\n", __func__);
+		return;
+	}
+
+	dev = &pdev->dev;
+	if (!dev) {
+		pr_err("%s: invalid device\n", __func__);
+		return;
+	}
+
+	if (display->trusted_vm_env) {
+		pr_info("%s: GPIO's are not enabled in trusted VM\n", __func__);
+		return;
+	}
+
+	if (!gpio_is_valid(display->disp_te_gpio)) {
+		pr_err("%s: GPIO %d is not valid\n", __func__, display->disp_te_gpio);
+		rc = -EINVAL;
+		return;
+	}
+
+	te_irq = gpio_to_irq(display->disp_te_gpio);
+	pr_info("%s: set TE (gpio%d) irq(%d) to %d\n", __func__, display->disp_te_gpio, te_irq, en);
+       if (te_irq <= 0) {
+		pr_err("%s: map gpio %d to irq %d is not valid\n", __func__, display->disp_te_gpio, te_irq);
+                return;
+	}
+       if (en) {
+            /* Avoid deferred spurious irqs with disable_irq() */
+            irq_set_status_flags(te_irq, IRQ_DISABLE_UNLAZY);
+            rc = devm_request_irq(dev, te_irq, dsi_display_panel_te_irq_handler_ext,
+                             IRQF_TRIGGER_FALLING | IRQF_ONESHOT, "TE_GPIO", display);
+            if (rc) {
+                pr_err("%s: TE request_irq failed for ESD rc:%d\n", __func__, rc);
+                irq_clear_status_flags(te_irq, IRQ_DISABLE_UNLAZY);
+                return;
+            }
+            enable_irq(te_irq);
+	} else {
+            disable_irq(te_irq);
+            free_irq(te_irq, display);
+	}
+
+	return;
+}
+
 static ssize_t dsi_display_wakup_get(struct device *dev,
 	struct device_attribute *attr, char *buf)
 {
@@ -1315,6 +1396,47 @@ static ssize_t dsi_display_para_by_id_put(struct device *dev,
 	return count;
 }
 
+static ssize_t dsi_display_te_cal_en_get(struct device *dev,
+	struct device_attribute *attr, char *buf)
+{
+	int rc = 0;
+
+	rc = snprintf(buf, PAGE_SIZE, "g_te_irq_cal_period: %d us\n",   g_te_irq_cal_period);
+	pr_info("g_te_irq_cal_period:%d us\n", g_te_irq_cal_period);
+
+	return rc;
+}
+
+static ssize_t dsi_display_te_cal_en_set(struct device *dev,
+	struct device_attribute *attr, const char *buf, size_t count)
+{
+	struct drm_connector *conn;
+	struct sde_connector *sde_conn;
+	struct dsi_display *display;
+	u16 val = 0;
+
+	if (!dev || !buf) {
+		pr_err("%s: Invalid input: dev(%s), buf(%s)\n", __func__, dev? "valid" : "null", buf? "valid" : "null");
+		return count;
+	}
+
+	conn = dev_get_drvdata(dev);
+	sde_conn = to_sde_connector(conn);
+	display = sde_conn->display;
+	if (!display) {
+		pr_err("%s: Invalid  input: display\n", __func__);
+		return count;
+	}
+
+	if (kstrtou16(buf, 10, &val) < 0)
+		return count;
+
+	g_te_irq_cal_period = val;
+	pr_info("%s: %d\n", __func__, val);
+	dsi_display_te_irq_en(display, val);
+
+	return count;
+}
 
 ///sys/devices/platform/soc/soc:qcom,dsi-display/
 static DEVICE_ATTR(dsi_display_wakeup, 0644,
@@ -1329,6 +1451,9 @@ static DEVICE_ATTR(panel_parse_para, 0664,
 static DEVICE_ATTR(panel_para_by_id, 0664,
 			dsi_display_para_by_id_get,
 			dsi_display_para_by_id_put);
+static DEVICE_ATTR(panel_te_cal_en, 0664,
+			dsi_display_te_cal_en_get,
+			dsi_display_te_cal_en_set);
 
 
 static const struct attribute *dsi_display_mot_ext_fs_attrs[] = {
@@ -1336,6 +1461,7 @@ static const struct attribute *dsi_display_mot_ext_fs_attrs[] = {
 	&dev_attr_pressure_test_en.attr,
 	&dev_attr_panel_parse_para.attr,
 	&dev_attr_panel_para_by_id.attr,
+	&dev_attr_panel_te_cal_en.attr,
 	NULL,
 };
 
