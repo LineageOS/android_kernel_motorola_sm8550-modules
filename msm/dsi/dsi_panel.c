@@ -2248,7 +2248,6 @@ static int dsi_panel_parse_dfps_caps(struct dsi_panel *panel)
 	const char *name = panel->name;
 	const char *type;
 	u32 i;
-	u32 val = 0;
 
 	supported = utils->read_bool(utils->data,
 			"qcom,mdss-dsi-pan-enable-dynamic-fps");
@@ -2323,12 +2322,7 @@ static int dsi_panel_parse_dfps_caps(struct dsi_panel *panel)
 	dfps_caps->dfps_send_cmd_support = utils->read_bool(utils->data,
 			"qcom,mdss-dsi-pan-dfps-send-command");
 	if(dfps_caps->dfps_send_cmd_support) {
-		rc = utils->read_u32(utils->data, "qcom,mdss-dsi-pan-on-fps", &val);
-		if (rc) {
-			dfps_caps->panel_on_fps = 60;
-		} else {
-			dfps_caps->panel_on_fps = val;
-		}
+		dfps_caps->panel_on_fps = dfps_caps->dfps_list[0];
 		dfps_caps->current_fps = dfps_caps->panel_on_fps;
 	}
 
