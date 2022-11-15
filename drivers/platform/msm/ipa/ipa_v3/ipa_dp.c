@@ -6613,8 +6613,9 @@ static int ipa_gsi_setup_channel(struct ipa_sys_connect_params *in,
 		if (result)
 			goto fail_setup_event_ring;
 	}
+	// MMI_STOPSHIP IPA: Add debug GFP flag 0x80000000 to assist the analysis of memory alloc failure
 	result = ipa_gsi_setup_transfer_ring(ep, ring_size,
-		ep->sys, mem_flag);
+		ep->sys, mem_flag | 0x80000000);
 	if (result)
 		goto fail_setup_transfer_ring;
 
