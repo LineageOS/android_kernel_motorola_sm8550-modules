@@ -956,18 +956,59 @@ static int dsi_panel_pwm_register(struct dsi_panel *panel)
 	return 0;
 }
 
+static int dsi_panel_tx_send_param_cmd(struct dsi_panel *panel,
+		struct panel_param_val_map *param_map_state)
+{
+	int rc = 0;
+	int i = 0;
+	struct dsi_cmd_desc *cmds;
+	enum dsi_cmd_set_state state;
+	u32 count;
+	ssize_t len;
+
+	if (!param_map_state) {
+		DSI_ERR("Invalid Params\n");
+		return -EINVAL;
+	}
+	count = param_map_state->cmds->count;
+	cmds = param_map_state->cmds->cmds;
+	state = param_map_state->cmds->state;
+
+	if (count == 0) {
+		DSI_DEBUG("[%s] No dsi_panel_tx_send_param_cmd commands to be sent\n",
+			 panel->name);
+		goto error;
+	}
+
+	for (i = 0; i < count; i++) {
+		cmds->ctrl_flags = 0;
+
+		if (state == DSI_CMD_SET_STATE_LP)
+			cmds->msg.flags |= MIPI_DSI_MSG_USE_LPM;
+
+		len = dsi_host_transfer_sub(panel->host, cmds);
+		if (len < 0) {
+			rc = len;
+			DSI_ERR("failed to set dsi_panel_tx_send_param_cmd  cmds, rc=%d\n", rc);
+			goto error;
+		}
+		if (cmds->post_wait_ms)
+			usleep_range(cmds->post_wait_ms*1000,
+					((cmds->post_wait_ms*1000)+10));
+		cmds++;
+	}
+error:
+	return rc;
+}
+
 static int dsi_panel_send_param_cmd(struct dsi_panel *panel,
                                 struct msm_param_info *param_info)
 {
-	int rc = 0, i = 0;
+	int rc = 0;
 	struct panel_param_val_map *param_map;
 	struct panel_param_val_map *param_map_state;
 	struct panel_param *panel_param;
-	struct dsi_cmd_desc *cmds;
-	ssize_t len;
-	u32 count;
 
-	const struct mipi_dsi_host_ops *ops = panel->host->ops;
 	panel_param = &panel->param_cmds[param_info->param_idx];
 	if (!panel_param) {
 		DSI_ERR("%s: invalid panel_param.\n", __func__);
@@ -1007,22 +1048,10 @@ static int dsi_panel_send_param_cmd(struct dsi_panel *panel,
 			goto end;
 		}
 
-		cmds = param_map_state->cmds->cmds;
-		count = param_map_state->cmds->count;
-
-		for (i =0; i < count; i++) {
-			if (param_map_state->cmds->state == DSI_CMD_SET_STATE_LP)
-				cmds->msg.flags |= MIPI_DSI_MSG_USE_LPM;
-			//if (cmds->last_command)
-			//	cmds->msg.flags |= MIPI_DSI_MSG_LASTCOMMAND;
-			len = ops->transfer(panel->host, &cmds->msg);
-			if (len < 0) {
-				rc = len;
-				DSI_ERR("%s:failed to send param cmd, rc=%d\n",
-						__func__, rc);
-				goto end;
-			}
-			cmds++;
+		rc = dsi_panel_tx_send_param_cmd(panel, param_map_state);
+		if(rc < 0){
+			DSI_ERR("%s: failed to set %s cmd\n",__func__,panel_param->param_name);
+			goto end;
 		}
 		panel_param->value = param_info->value;
 		if (!strcmp(panel_param->param_name, "DC")){
@@ -1031,7 +1060,6 @@ static int dsi_panel_send_param_cmd(struct dsi_panel *panel,
 		}
 		DSI_INFO("(%d) is setting new value %d\n",
 			param_info->param_idx, param_info->value);
-		rc = len;
 	}
 
 end:
