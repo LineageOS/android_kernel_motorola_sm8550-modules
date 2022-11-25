@@ -186,6 +186,11 @@ static int cam_sensor_handle_res_info(struct cam_sensor_res_info *res_info,
 
 	s_ctrl->is_res_info_updated = true;
 
+	if (res_info->num_valid_params > 0) {
+		if (res_info->valid_param_mask & CAM_SENSOR_BATCH_NUMBER)
+			s_ctrl->batch_number = res_info->params[0];
+	}
+
 	/* If request id is 0, it will be during an initial config/acquire */
 	CAM_INFO(CAM_SENSOR,
 		"Sensor[%s-%d] Feature: 0x%x updated for request id: %lu, res index: %u, width: 0x%x, height: 0x%x, capability: %s, fps: %u",
@@ -1367,6 +1372,7 @@ int32_t cam_sensor_driver_cmd(struct cam_sensor_ctrl_t *s_ctrl,
 		s_ctrl->is_stopped_by_user = false;
 		s_ctrl->last_updated_req = 0;
 		s_ctrl->last_applied_req = 0;
+		s_ctrl->batch_number = 0;
 		memset(s_ctrl->sensor_res, 0, sizeof(s_ctrl->sensor_res));
 		CAM_INFO(CAM_SENSOR,
 			"CAM_ACQUIRE_DEV Success for %s sensor_id:0x%x,sensor_slave_addr:0x%x",
@@ -1661,11 +1667,15 @@ int cam_sensor_publish_dev_info(struct cam_req_mgr_device_info *info)
 
 	info->dev_id = CAM_REQ_MGR_DEVICE_SENSOR;
 	strlcpy(info->name, CAM_SENSOR_NAME, sizeof(info->name));
-	if (s_ctrl->pipeline_delay >= 1 && s_ctrl->pipeline_delay <= 3)
+	if (s_ctrl->batch_number >= 3)
+		info->p_delay = 1;
+	else if (s_ctrl->pipeline_delay >= 1 && s_ctrl->pipeline_delay <= 3)
 		info->p_delay = s_ctrl->pipeline_delay;
 	else
 		info->p_delay = 2;
 	info->trigger = CAM_TRIGGER_POINT_SOF;
+
+	CAM_INFO(CAM_SENSOR, "batch number %d p_delay is %d", s_ctrl->batch_number, info->p_delay);
 
 	return rc;
 }

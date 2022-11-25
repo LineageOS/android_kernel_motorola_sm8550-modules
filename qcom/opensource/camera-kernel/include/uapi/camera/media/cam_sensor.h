@@ -317,6 +317,8 @@ struct cam_cmd_i2c_info {
 #define CAM_SENSOR_FEATURE_INSENSOR_HDR_3EXP_ON    BIT(3)
 #define CAM_SENSOR_FEATURE_INSENSOR_HDR_3EXP_OFF   BIT(4)
 
+#define CAM_SENSOR_BATCH_NUMBER BIT(0)
+
 /**
  * struct cam_cmd_sensor_res_info - Contains sensor res info
  *
