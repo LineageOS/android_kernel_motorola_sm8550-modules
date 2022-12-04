@@ -123,7 +123,7 @@ static void dp_usbpd_init_port(enum dp_usbpd_port *port, u32 in_port)
 	default:
 		*port = DP_USBPD_PORT_NONE;
 	}
-	DP_DEBUG("port:%s\n", dp_usbpd_port_name(*port));
+	DP_INFO("port:%s\n", dp_usbpd_port_name(*port));
 }
 
 static void dp_usbpd_get_capabilities(struct dp_usbpd_private *pd)
@@ -189,14 +189,14 @@ static u32 dp_usbpd_gen_config_pkt(struct dp_usbpd_private *pd)
 	if (pin == DP_USBPD_PIN_MAX)
 		pin = DP_USBPD_PIN_C;
 
-	DP_DEBUG("pin assignment: %s\n", dp_usbpd_pin_name(pin));
+	DP_INFO("pin assignment: %s\n", dp_usbpd_pin_name(pin));
 
 	config |= BIT(pin) << 8;
 
 	config |= (dp_ver << 2);
 	config |= ufp_d_config;
 
-	DP_DEBUG("config = 0x%x\n", config);
+	DP_INFO("config = 0x%x\n", config);
 	return config;
 }
 
@@ -247,7 +247,7 @@ static void dp_usbpd_connect_cb(struct usbpd_svid_handler *hdlr,
 		return;
 	}
 
-	DP_DEBUG("peer_usb_comm: %d\n", peer_usb_comm);
+	DP_INFO("peer_usb_comm: %d\n", peer_usb_comm);
 	pd->dp_usbpd.base.peer_usb_comm = peer_usb_comm;
 	dp_usbpd_send_event(pd, DP_USBPD_EVT_DISCOVER);
 }
@@ -264,7 +264,7 @@ static void dp_usbpd_disconnect_cb(struct usbpd_svid_handler *hdlr)
 
 	pd->alt_mode = DP_USBPD_ALT_MODE_NONE;
 	pd->dp_usbpd.base.alt_mode_cfg_done = false;
-	DP_DEBUG("\n");
+	DP_INFO("\n");
 
 	if (pd->dp_cb && pd->dp_cb->disconnect)
 		pd->dp_cb->disconnect(pd->dev);
@@ -444,7 +444,7 @@ static int dp_usbpd_simulate_connect(struct dp_hpd *dp_hpd, bool hpd)
 	pd->forced_disconnect = !hpd;
 	pd->dp_usbpd.base.alt_mode_cfg_done = hpd;
 
-	DP_DEBUG("hpd_high=%d, forced_disconnect=%d, orientation=%d\n",
+	DP_INFO("hpd_high=%d, forced_disconnect=%d, orientation=%d\n",
 			dp_usbpd->base.hpd_high, pd->forced_disconnect,
 			pd->dp_usbpd.base.orientation);
 	if (hpd)

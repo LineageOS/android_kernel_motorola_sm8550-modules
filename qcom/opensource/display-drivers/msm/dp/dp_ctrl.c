@@ -750,8 +750,15 @@ static int dp_ctrl_link_setup(struct dp_ctrl_private *ctrl, bool shallow)
 	catalog->phy_lane_cfg(catalog, ctrl->orientation,
 				link_params->lane_count);
 
+	// When there is multiFunc, only 2 lanes can be used by DP, some usb hub can not send video properly.
+	// Just reduce DP capablity to avoid choosing mode with too high resolution and framerate
+	if (ctrl->parser->dp_downgrade && link_params->lane_count == 2 && link_params->bw_code == DP_LINK_BW_8_1) {
+		DP_INFO("dp_ctrl_link_setup downgrade to DP1.2\n");
+		link_params->bw_code = DP_LINK_BW_5_4;
+	}
+
 	while (1) {
-		DP_DEBUG("bw_code=%d, lane_count=%d\n",
+		DP_INFO("bw_code=%d, lane_count=%d\n",
 			link_params->bw_code, link_params->lane_count);
 
 		rc = dp_ctrl_enable_link_clock(ctrl);
