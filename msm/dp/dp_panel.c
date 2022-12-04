@@ -1616,7 +1616,7 @@ static int dp_panel_read_dpcd(struct dp_panel *dp_panel, bool multi_func)
 
 	/* check for EXTENDED_RECEIVER_CAPABILITY_FIELD_PRESENT */
 	if (temp & BIT(7)) {
-		DP_DEBUG("using EXTENDED_RECEIVER_CAPABILITY_FIELD\n");
+		DP_INFO("using EXTENDED_RECEIVER_CAPABILITY_FIELD\n");
 		offset = DPRX_EXTENDED_DPCD_FIELD;
 	}
 
@@ -1638,7 +1638,7 @@ static int dp_panel_read_dpcd(struct dp_panel *dp_panel, bool multi_func)
 	rlen = drm_dp_dpcd_read(panel->aux->drm_aux,
 		DPRX_FEATURE_ENUMERATION_LIST, &rx_feature, 1);
 	if (rlen != 1) {
-		DP_DEBUG("failed to read DPRX_FEATURE_ENUMERATION_LIST\n");
+		DP_INFO("failed to read DPRX_FEATURE_ENUMERATION_LIST\n");
 		rx_feature = 0;
 	} else {
 		panel->vsc_supported = !!(rx_feature &
@@ -1648,7 +1648,7 @@ static int dp_panel_read_dpcd(struct dp_panel *dp_panel, bool multi_func)
 		panel->vscext_chaining_supported = !!(rx_feature &
 				VSC_EXT_VESA_SDP_CHAINING_SUPPORTED);
 
-		DP_DEBUG("vsc=%d, vscext=%d, vscext_chaining=%d\n",
+		DP_INFO("vsc=%d, vscext=%d, vscext_chaining=%d\n",
 				panel->vsc_supported, panel->vscext_supported,
 				panel->vscext_chaining_supported);
 	}
@@ -1663,14 +1663,14 @@ static int dp_panel_read_dpcd(struct dp_panel *dp_panel, bool multi_func)
 	link_info->num_lanes = dpcd[DP_MAX_LANE_COUNT] & DP_MAX_LANE_COUNT_MASK;
 
 	if (is_link_rate_valid(panel->dp_panel.link_bw_code)) {
-		DP_DEBUG("debug link bandwidth code: 0x%x\n",
+		DP_INFO("debug link bandwidth code: 0x%x\n",
 				panel->dp_panel.link_bw_code);
 		link_info->rate = drm_dp_bw_code_to_link_rate(
 				panel->dp_panel.link_bw_code);
 	}
 
 	if (is_lane_count_valid(panel->dp_panel.lane_count)) {
-		DP_DEBUG("debug lane count: %d\n", panel->dp_panel.lane_count);
+		DP_INFO("debug lane count: %d\n", panel->dp_panel.lane_count);
 		link_info->num_lanes = panel->dp_panel.lane_count;
 	}
 
@@ -1678,7 +1678,7 @@ static int dp_panel_read_dpcd(struct dp_panel *dp_panel, bool multi_func)
 		link_info->num_lanes = min_t(unsigned int,
 			link_info->num_lanes, 2);
 
-	DP_DEBUG("version:%d.%d, rate:%d, lanes:%d\n", panel->major,
+	DP_INFO("version:%d.%d, rate:%d, lanes:%d\n", panel->major,
 		panel->minor, link_info->rate, link_info->num_lanes);
 
 	if (drm_dp_enhanced_frame_cap(dpcd))
@@ -1720,7 +1720,7 @@ static int dp_panel_set_default_link_params(struct dp_panel *dp_panel)
 	link_info = &dp_panel->link_info;
 	link_info->rate = default_bw_code;
 	link_info->num_lanes = default_num_lanes;
-	DP_DEBUG("link_rate=%d num_lanes=%d\n",
+	DP_INFO("link_rate=%d num_lanes=%d\n",
 		link_info->rate, link_info->num_lanes);
 
 	return 0;
