@@ -1611,7 +1611,8 @@ static int dsi_panel_parse_timing(struct dsi_mode_info *mode,
 	}
 	// Motorola zhanggb, Workaround for CTS GSI test, 12/22/2022, IKSWT-56773
 	// Dont report mode with same framerate to uppler layer(make their h-total the same value)
-	if(mode->refresh_rate_group_flag & (RRGSFlag_Special_Idle_1Hz | RRGSFlag_Special_Idle_10Hz))
+	if(dsi_panel_is_gsi_mode() &&
+	  (mode->refresh_rate_group_flag & (RRGSFlag_Special_Idle_1Hz | RRGSFlag_Special_Idle_10Hz)))
 		mode->h_front_porch = 32;
 
 	rc = utils->read_u32(utils->data,
