@@ -2044,6 +2044,11 @@ static void dp_display_connect_work(struct work_struct *work)
 		return;
 	}
 
+	if (dp_display_state_is(DP_STATE_DISCONNECT_NOTIFIED) && dp->hpd->hpd_high) {
+		if (!dp->debug->sim_mode && !dp->no_aux_switch && !dp->parser->gpio_aux_switch)
+			dp->aux->switch_configure(dp->aux, true, dp->hpd->orientation);
+	}
+
 	rc = dp_display_process_hpd_high(dp);
 
 	if (!rc && dp->panel->video_test)
