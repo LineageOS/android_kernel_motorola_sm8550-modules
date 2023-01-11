@@ -4550,7 +4550,58 @@ end:
 
 }
 
+static ssize_t sysfs_fod_hbm_read(struct device *dev,
+				  struct device_attribute *attr,
+				  char *buf)
+{
+	struct dsi_display *display = dev_get_drvdata(dev);
+	struct dsi_panel *panel = display->panel;
+	bool status;
+
+	mutex_lock(&panel->panel_lock);
+	status = panel->fod_hbm_enabled;
+	mutex_unlock(&panel->panel_lock);
+
+	return snprintf(buf, PAGE_SIZE, "%u\n", status);
+}
+
+static ssize_t sysfs_fod_hbm_write(struct device *dev,
+				   struct device_attribute *attr,
+				   const char *buf, size_t count)
+{
+	struct dsi_display *display = dev_get_drvdata(dev);
+	struct dsi_panel *panel = display->panel;
+	struct msm_param_info param_info;
+	bool status;
+	int rc;
+
+	rc = kstrtobool(buf, &status);
+	if (rc)
+		return rc;
+
+	mutex_lock(&panel->panel_lock);
+	if (panel->fod_hbm_enabled == status)
+		goto exit;
+
+	param_info.param_idx = PARAM_HBM_ID;
+	param_info.value = status ? HBM_FOD_ON_STATE : HBM_OFF_STATE;
+
+	rc = dsi_panel_set_param(panel, &param_info);
+	if (rc)
+		goto exit;
+
+	panel->fod_hbm_enabled = status;
+
+exit:
+	mutex_unlock(&panel->panel_lock);
+
+	return rc ?: count;
+}
+
+static DEVICE_ATTR(fod_hbm, 0644, sysfs_fod_hbm_read, sysfs_fod_hbm_write);
+
 static struct attribute *panel_attrs[] = {
+	&dev_attr_fod_hbm.attr,
 	NULL,
 };
 
