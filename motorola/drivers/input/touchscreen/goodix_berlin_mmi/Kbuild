@@ -98,7 +98,6 @@ else ifneq ($(filter felix, $(USE_TARGET_PRODUCT)), )
 else ifneq ($(filter zeekr%, $(USE_TARGET_PRODUCT)), )
         EXTRA_CFLAGS += -DPRODUCT_ZEEKR
 endif
-$(warning "william EXTRA_CFLAGS = $(EXTRA_CFLAGS)")
 
 KBUILD_EXTRA_SYMBOLS += $(CURDIR)/$(KBUILD_EXTMOD)/../touchscreen_mmi/Module.symvers
 KBUILD_EXTRA_SYMBOLS += $(CURDIR)/$(KBUILD_EXTMOD)/../../../mmi_info/Module.symvers
