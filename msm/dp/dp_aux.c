@@ -805,7 +805,8 @@ static int dp_aux_configure_fsa_switch(struct dp_aux *dp_aux,
 	DP_AUX_DEBUG(dp_aux, "enable=%d, orientation=%d, event=%d\n",
 			enable, orientation, event);
 
-	if (gpio_is_valid(dp_aux->dp_aux_switch_flip_gpio)) {
+	if (gpio_is_valid(dp_aux->dp_aux_switch_flip_gpio) ||
+		gpio_is_valid(dp_aux->dp_aux_switch_enable_gpio)) {
 		bool switch_enable = false;
 		bool switch_flip = false;
 		if (orientation == ORIENTATION_CC1 && enable) {
@@ -818,8 +819,10 @@ static int dp_aux_configure_fsa_switch(struct dp_aux *dp_aux,
 		if (gpio_is_valid(dp_aux->dp_aux_switch_enable_gpio))
 			gpio_set_value(dp_aux->dp_aux_switch_enable_gpio,
 						switch_enable ? 0 : 1);
-		gpio_set_value(dp_aux->dp_aux_switch_flip_gpio,
-					switch_flip ? 1 : 0);
+
+		if (gpio_is_valid(dp_aux->dp_aux_switch_flip_gpio))
+			gpio_set_value(dp_aux->dp_aux_switch_flip_gpio,
+						switch_flip ? 1 : 0);
 		DP_INFO("dp_aux_switch: en=%d, cc=%d, sw_en=%d, sw_flip=%d\n",
 				enable, orientation, switch_enable, switch_flip);
 	} else {
