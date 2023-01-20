@@ -93,6 +93,7 @@ static moto_product products_list[] = {
 	{"rtwo",        "PRC",  "prc.epa"},
 	{"rtwo",        "ROW",  "row.epa"},
 	{"rtwo",        "VZW",  "vzw.epa"},
+	{"oberon",	"all",	NV_EPA}, //a19110 IKSWT-74269
 	/* Terminator */
 	{{0}, {0}, {0}},
 };
