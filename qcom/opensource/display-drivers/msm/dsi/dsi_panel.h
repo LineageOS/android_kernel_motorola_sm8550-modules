@@ -412,6 +412,7 @@ struct dsi_panel {
 	int dc_state;
 	int panel_power_cnt;
 	struct msm_param_info curDCModeParaInfo;
+	bool hbm_enabled;
 	bool fod_hbm_enabled;
 };
 
