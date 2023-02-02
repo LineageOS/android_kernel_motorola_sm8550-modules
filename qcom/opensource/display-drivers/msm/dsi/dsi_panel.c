@@ -4554,6 +4554,7 @@ static ssize_t dsi_panel_set_hbm_status(struct dsi_panel *panel, bool hbm_status
 										bool fodhbm_status)
 {
 	struct msm_param_info param_info;
+
 	param_info.param_idx = PARAM_HBM_ID;
 	if(hbm_status)
 		param_info.value = HBM_ON_STATE;
@@ -4629,7 +4630,6 @@ static ssize_t sysfs_fod_hbm_write(struct device *dev,
 {
 	struct dsi_display *display = dev_get_drvdata(dev);
 	struct dsi_panel *panel = display->panel;
-	struct msm_param_info param_info;
 	bool status;
 	int rc;
 
@@ -6263,6 +6263,15 @@ int dsi_panel_post_enable(struct dsi_panel *panel)
 			pr_err("[%s] failed to send DSI_CMD_SET_ON cmds, rc=%d\n",
 			       panel->name, rc);
 		}
+	}
+
+	if (panel->hbm_enabled) {
+	    mutex_unlock(&panel->panel_lock);
+		rc = dsi_panel_set_hbm_status(panel, false, false);
+		rc = dsi_panel_set_hbm_status(panel, panel->hbm_enabled,
+					panel->fod_hbm_enabled);
+		if (rc)
+			goto error;
 	}
 
 	PANEL_NOTIFY(PANEL_EVENT_DISPLAY_ON);
