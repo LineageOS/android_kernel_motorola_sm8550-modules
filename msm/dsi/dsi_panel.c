@@ -1097,7 +1097,10 @@ static int dsi_panel_send_param_cmd(struct dsi_panel *panel,
 			rc = -EINVAL;
 			goto end;
 		}
-
+		if (!panel->panel_initialized) {
+			rc = -ENODEV;
+			goto end;
+		}
 		rc = dsi_panel_tx_send_param_cmd(panel, param_map_state);
 		if(rc < 0){
 			DSI_ERR("%s: failed to set %s cmd\n",__func__,panel_param->param_name);

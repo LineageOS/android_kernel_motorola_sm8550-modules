@@ -3983,7 +3983,9 @@ static int sde_kms_set_panel_feature(const struct msm_kms *kms,
 	param_info_msm.value = param_info.value;
 	for (i = 0; i < sde_kms->dsi_display_count; i++){
 		display = (struct dsi_display *)sde_kms->dsi_displays[i];
-
+		if(!display->panel->panel_send_cmd) {
+			continue;
+		}
 		rc = dsi_display_set_param(display, &param_info_msm);
 		if (rc){
 			SDE_ERROR("dsi_displays[%d] set param %d value %d failed\n",
