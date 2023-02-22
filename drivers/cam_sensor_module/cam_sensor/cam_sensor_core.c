@@ -1653,13 +1653,49 @@ int32_t cam_sensor_driver_cmd(struct cam_sensor_ctrl_t *s_ctrl,
 					"MotPreAct - Sensor Power up failed for %s sensor_id:0x%x, slave_addr:0x%x",
 					s_ctrl->sensor_name,
 					s_ctrl->sensordata->slave_info.sensor_id,
-					s_ctrl->sensordata->slave_info.sensor_slave_addr
-					);
+					s_ctrl->sensordata->slave_info.sensor_slave_addr);
 				goto release_mutex;
 			}
-
 			s_ctrl->sensor_power_up_done = 1;
+			CAM_DBG(CAM_SENSOR, "MotPreAct - Camera[%s] pre power on done = %d", s_ctrl->sensor_name, s_ctrl->sensor_power_up_done);
 		}
+	}
+		break;
+	case CAM_MOT_PRE_POWER_DOWN: {
+		if (s_ctrl->sensor_power_up_done)
+		{
+			rc = cam_sensor_power_down(s_ctrl);
+			if (rc < 0) {
+				CAM_ERR(CAM_SENSOR,
+					"Sensor Power Down failed for %s sensor_id: 0x%x, slave_addr:0x%x",
+					s_ctrl->sensor_name,
+					s_ctrl->sensordata->slave_info.sensor_id,
+					s_ctrl->sensordata->slave_info.sensor_slave_addr);
+				goto release_mutex;
+			}
+			CAM_DBG(CAM_SENSOR, "MotPreAct - Camera[%s] pre power down done = %d", s_ctrl->sensor_name, s_ctrl->sensor_power_up_done);
+		}
+	}
+		break;
+	case CAM_MOT_QUERY_SENSOR_STATUS: {
+		uint32_t isSensorActive = 0;
+
+		if (s_ctrl->sensor_power_up_done)
+		{
+			isSensorActive = 1;
+		}
+		else
+		{
+			isSensorActive = 0;
+		}
+
+		if (copy_to_user(u64_to_user_ptr(cmd->handle),
+			&isSensorActive, sizeof(uint32_t))) {
+			CAM_ERR(CAM_SENSOR, "MotPreAct - Failed Copy to User");
+			rc = -EFAULT;
+			goto release_mutex;
+		}
+		CAM_DBG(CAM_SENSOR, "MotPreAct - Query camera[%s] status = %d", s_ctrl->sensor_name, isSensorActive);
 	}
 		break;
 #endif
@@ -1781,7 +1817,7 @@ int cam_sensor_power_up(struct cam_sensor_ctrl_t *s_ctrl)
 #ifdef CONFIG_MOT_SENSOR_PRE_POWERUP
 	if (s_ctrl->sensor_power_up_done)
 	{
-		CAM_INFO(CAM_SENSOR, "MotPreAct - sensor[%s] has power up done.", s_ctrl->sensor_name);
+		CAM_INFO(CAM_SENSOR, "MotPreAct - sensor[%s] has power on done.", s_ctrl->sensor_name);
 		return 0;
 	}
 #endif
