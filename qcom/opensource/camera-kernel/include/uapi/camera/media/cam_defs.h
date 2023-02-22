@@ -35,6 +35,8 @@
 //#ifdef CONFIG_MOT_SENSOR_PRE_POWERUP
 #define CAM_MOT_OPCODE_BASE                     0x250
 #define CAM_MOT_PRE_POWER_UP                    (CAM_MOT_OPCODE_BASE + 0x1)
+#define CAM_MOT_PRE_POWER_DOWN                  (CAM_MOT_OPCODE_BASE + 0x2)
+#define CAM_MOT_QUERY_SENSOR_STATUS             (CAM_MOT_OPCODE_BASE + 0x3)
 //#endif
 
 /* camera handle type */
