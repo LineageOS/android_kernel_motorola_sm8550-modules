@@ -1438,6 +1438,73 @@ static ssize_t dsi_display_te_cal_en_set(struct device *dev,
 	return count;
 }
 
+static ssize_t dsi_display_mipi_cmd_log_en_get(struct device *dev,
+	struct device_attribute *attr, char *buf)
+{
+	int rc = 0;
+	struct drm_connector *conn;
+	struct sde_connector *sde_conn;
+	struct dsi_display *display;
+	struct dsi_display_ctrl *ctrl;
+
+	if (!dev || !buf) {
+		pr_err("%s: Invalid input: dev(%s), buf(%s)\n", __func__, dev? "valid" : "null", buf? "valid" : "null");
+		return rc;
+	}
+
+	conn = dev_get_drvdata(dev);
+	sde_conn = to_sde_connector(conn);
+	display = sde_conn->display;
+	if (!display) {
+		pr_err("%s: Invalid display\n", __func__);
+		return rc;
+	}
+	ctrl = &display->ctrl[display->cmd_master_idx];
+       if (ctrl && ctrl->ctrl) {
+	    rc = snprintf(buf, PAGE_SIZE, "ctrl->ctrl->mipi_cmd_log_en: %d\n",   ctrl->ctrl->mipi_cmd_log_en);
+	    pr_info("%s: ctrl->ctrl->mipi_cmd_log_en=%d\n", __func__, ctrl->ctrl->mipi_cmd_log_en);
+       } else {
+	    pr_err("%s: ctrl is null\n", __func__);
+       }
+
+	return rc;
+}
+
+static ssize_t dsi_display_mipi_cmd_log_en_set(struct device *dev,
+	struct device_attribute *attr, const char *buf, size_t count)
+{
+	struct drm_connector *conn;
+	struct sde_connector *sde_conn;
+	struct dsi_display *display;
+	struct dsi_display_ctrl *ctrl;
+	u16 val = 0;
+
+	if (!dev || !buf) {
+		pr_err("%s: Invalid input: dev(%s), buf(%s)\n", __func__, dev? "valid" : "null", buf? "valid" : "null");
+		return count;
+	}
+
+	conn = dev_get_drvdata(dev);
+	sde_conn = to_sde_connector(conn);
+	display = sde_conn->display;
+	if (!display) {
+		pr_err("%s: Invalid display\n", __func__);
+		return count;
+	}
+	ctrl = &display->ctrl[display->cmd_master_idx];
+
+	if (kstrtou16(buf, 10, &val) < 0)
+		return count;
+
+       if (ctrl && ctrl->ctrl) {
+	    ctrl->ctrl->mipi_cmd_log_en = val;
+	    pr_info("%s: %d\n", __func__, val);
+       } else {
+	    pr_err("%s: ctrl is null\n", __func__);
+       }
+
+	return count;
+}
 ///sys/devices/platform/soc/soc:qcom,dsi-display/
 static DEVICE_ATTR(dsi_display_wakeup, 0644,
 			dsi_display_wakup_get,
@@ -1454,7 +1521,9 @@ static DEVICE_ATTR(panel_para_by_id, 0664,
 static DEVICE_ATTR(panel_te_cal_en, 0664,
 			dsi_display_te_cal_en_get,
 			dsi_display_te_cal_en_set);
-
+static DEVICE_ATTR(mipi_cmd_log_en, 0664,
+			dsi_display_mipi_cmd_log_en_get,
+			dsi_display_mipi_cmd_log_en_set);
 
 static const struct attribute *dsi_display_mot_ext_fs_attrs[] = {
 	&dev_attr_dsi_display_wakeup.attr,
@@ -1462,6 +1531,7 @@ static const struct attribute *dsi_display_mot_ext_fs_attrs[] = {
 	&dev_attr_panel_parse_para.attr,
 	&dev_attr_panel_para_by_id.attr,
 	&dev_attr_panel_te_cal_en.attr,
+	&dev_attr_mipi_cmd_log_en.attr,
 	NULL,
 };
 
