@@ -134,7 +134,7 @@ static int dp_altmode_notify(void *priv, void *data, size_t len)
 	// Motorola, zhanggb, 12/02/2022, IKSWT-49412
 	// Scene: Continous hdp_high=0 then hdp_high=1, aux may switch off by mistake
 	// Workaround: Ignore subsequent hpd_high=0 if already connected
-	if (altmode->connected && !altmode->dp_altmode.base.hpd_high) {
+	if (altmode->connected && !altmode->dp_altmode.base.hpd_high && pin) {
 		if (!!hpd_state == false && !!hpd_irq == 0) {
 			DP_INFO("Dup hpd low notified during connected, ignore it!\n");
 			goto ack;
