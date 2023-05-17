@@ -9688,6 +9688,7 @@ int dsi_display_enable(struct dsi_display *display)
 
 		dsi_display_enable_status(display, 1);
 		display->panel->panel_initialized = true;
+		display->panel->panel_send_cmd = true;
 		DSI_DEBUG("cont splash enabled, display enable not required\n");
 		dsi_display_panel_id_notification(display);
 
