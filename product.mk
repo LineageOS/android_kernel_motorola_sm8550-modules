@@ -1,3 +1,4 @@
+ifneq ($(BOARD_USES_LEGACY_CAMERA), true)
 CAMERA_DLKM_ENABLED := true
 ifeq ($(TARGET_KERNEL_DLKM_DISABLE), true)
 	ifeq ($(TARGET_KERNEL_DLKM_CAMERA_OVERRIDE), false)
@@ -8,3 +9,4 @@ endif
 ifeq ($(CAMERA_DLKM_ENABLED),true)
 PRODUCT_PACKAGES += camera.ko
 endif
+endif # !BOARD_USES_LEGACY_CAMERA
