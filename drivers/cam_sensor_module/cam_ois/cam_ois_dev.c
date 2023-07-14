@@ -580,6 +580,11 @@ static int cam_ois_component_bind(struct device *dev,
 #endif
 	INIT_LIST_HEAD(&(o_ctrl->i2c_time_data.list_head));
 	mutex_init(&(o_ctrl->ois_mutex));
+
+#ifdef CONFIG_MOT_OIS_SEM1217S_DRIVER
+	mutex_init(&(o_ctrl->sem1217s_mutex));
+#endif
+
 	rc = cam_ois_driver_soc_init(o_ctrl);
 	if (rc) {
 		CAM_ERR(CAM_OIS, "failed: soc init rc %d", rc);

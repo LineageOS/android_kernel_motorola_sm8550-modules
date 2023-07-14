@@ -175,6 +175,10 @@ struct cam_ois_ctrl_t {
 	bool is_video_mode;
 	bool is_need_eis_data;
 #endif
+#ifdef CONFIG_MOT_OIS_SEM1217S_DRIVER
+	struct mutex sem1217s_mutex;
+	uint8_t ois_early_fw_flag;
+#endif
 };
 
 /**

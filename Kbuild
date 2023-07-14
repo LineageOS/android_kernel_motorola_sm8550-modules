@@ -58,6 +58,10 @@ else ifneq (,$(filter rtwo, $(TARGET_PRODUCT)))
 include $(CAMERA_KERNEL_ROOT)/config/rtwo.mk
 else ifneq (,$(filter rtwo_factory, $(TARGET_PRODUCT)))
 include $(CAMERA_KERNEL_ROOT)/config/rtwo_factory.mk
+else ifneq (,$(filter ctwo, $(TARGET_PRODUCT)))
+include $(CAMERA_KERNEL_ROOT)/config/ctwo.mk
+else ifneq (,$(filter ctwo_factory, $(TARGET_PRODUCT)))
+include $(CAMERA_KERNEL_ROOT)/config/ctwo_factory.mk
 endif
 
 # For some targets which have binary compatible gki kernel with another one,
@@ -261,6 +265,8 @@ camera-$(CONFIG_SPECTRA_SENSOR) += \
 	drivers/cam_sensor_module/cam_flash/cam_flash_dev.o \
 	drivers/cam_sensor_module/cam_flash/cam_flash_core.o \
 	drivers/cam_sensor_module/cam_flash/cam_flash_soc.o
+
+camera-$(CONFIG_MOT_OIS_SEM1217S_DRIVER) += drivers/cam_sensor_module/cam_ois/cam_ois_sem1217s.o
 
 camera-$(CONFIG_CCI_DEBUG_INTF) += drivers/cam_sensor_module/cam_cci/cci_intf.o
 
