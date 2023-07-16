@@ -1,7 +1,7 @@
 # add -Wall to try to catch everything we can.
 EXTRA_CFLAGS += -Wall
 EXTRA_CFLAGS += \
-		-I$(ANDROID_BUILD_TOP)/motorola/kernel/modules/include
+		-I$(KERNEL_SRC)/../sm8550-modules/motorola/include
 
 obj-m := goodix_brl_mmi.o
 goodix_brl_mmi-objs := \
@@ -100,5 +100,5 @@ else ifneq ($(filter zeekr%, $(USE_TARGET_PRODUCT)), )
 endif
 $(warning "william EXTRA_CFLAGS = $(EXTRA_CFLAGS)")
 
-KBUILD_EXTRA_SYMBOLS += $(CURDIR)/$(KBUILD_EXTMOD)/../touchscreen_mmi/$(GKI_OBJ_MODULE_DIR)/Module.symvers
-KBUILD_EXTRA_SYMBOLS += $(CURDIR)/$(KBUILD_EXTMOD)/../../../mmi_info/$(GKI_OBJ_MODULE_DIR)/Module.symvers
+KBUILD_EXTRA_SYMBOLS += $(CURDIR)/$(KBUILD_EXTMOD)/../touchscreen_mmi/Module.symvers
+KBUILD_EXTRA_SYMBOLS += $(CURDIR)/$(KBUILD_EXTMOD)/../../../mmi_info/Module.symvers
