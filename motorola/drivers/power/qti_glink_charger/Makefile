@@ -1,3 +1,5 @@
+KBUILD_OPTIONS += CONFIG_WIRELESS_CPS4035B=m
+
 all: modules
 
 modules:
