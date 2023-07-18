@@ -1544,6 +1544,10 @@ static void wsa884x_codec_init(struct snd_soc_component *component)
 		snd_soc_component_update_bits(component, reg_init[i].reg,
 					reg_init[i].mask, reg_init[i].val);
 
+	if (wsa884x->boost_voltage_11v)
+		snd_soc_component_update_bits(component,
+					REG_FIELD_VALUE(CLSH_SOFT_MAX, SOFT_MAX, 0x8C));
+
 	/* Register updates for 2S battery configuration */
 	if (wsa884x->bat_cfg == CONFIG_2S) {
 		for (i = 0; i < ARRAY_SIZE(reg_init_2S); i++)
@@ -2021,6 +2025,11 @@ static int wsa884x_swr_probe(struct swr_device *pdev)
 		ret = -EPROBE_DEFER;
 		goto err;
 	}
+
+	wsa884x->boost_voltage_11v = of_property_read_bool(pdev->dev.of_node,
+				"qcom,boost_voltage_11v");
+	dev_info(&pdev->dev,
+		"%s: boost_voltage_11v: %d\n", __func__, wsa884x->boost_voltage_11v);
 
 	wsa884x->wsa_rst_np = of_parse_phandle(pdev->dev.of_node,
 					     "qcom,spkr-sd-n-node", 0);
