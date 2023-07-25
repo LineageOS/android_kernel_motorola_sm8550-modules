@@ -1162,12 +1162,15 @@ static int dsi_panel_set_local_hbm_param(struct dsi_panel *panel,
 
 		cmds = param_map_state->cmds->cmds;
 		count = param_map_state->cmds->count;
-
-		bl_num = panel->bl_config.bl_max_level/(lhbm_config->alpha_size - 1);
-		if(bl_num > 1)
-			alpha_level = lhbm_config->dbv_level/bl_num;
-		else
-			alpha_level = lhbm_config->dbv_level;
+		if(lhbm_config->bl_num > 0)
+			alpha_level = lhbm_config->dbv_level/lhbm_config->bl_num;
+		else{
+			bl_num = panel->bl_config.bl_max_level/(lhbm_config->alpha_size - 1);
+			if(bl_num > 1)
+				alpha_level = lhbm_config->dbv_level/bl_num;
+			else
+				alpha_level = lhbm_config->dbv_level;
+		}
 
 		for (i =0; i < count; i++) {
 			payload = (u8 *)cmds->msg.tx_buf;
@@ -1178,15 +1181,23 @@ static int dsi_panel_set_local_hbm_param(struct dsi_panel *panel,
 					rc = -EINVAL;
 					goto end;
 				}
-
 				alpha = lhbm_config->alpha[alpha_level];
-				payload[1] = (alpha&0xff00)>>8;
-				payload[2] = alpha&0xff;
-				DSI_INFO("%s: alpha [%x]=%x%x  alpha_level = %d backlight level=%d\n ",
-				        __func__, payload[0], payload[1], payload[2],alpha_level,
-				        lhbm_config->dbv_level);
-				rc =  0;
+				if(lhbm_config->dc_hybird_threshold != 0 &&
+					alpha_level > lhbm_config->dc_hybird_threshold){
+					payload[3] = (lhbm_config->dbv_level & 0xff00) >> 8;
+					payload[4] = lhbm_config->dbv_level & 0xff;
+					DSI_INFO("%s: alpha [%x]=%x%x  alpha_level = %d backlight level=%d\n ",
+						__func__, payload[0], payload[3], payload[4],alpha_level,
+						lhbm_config->dbv_level);
+				}else{
+					payload[1] = (alpha&0xff00)>>8;
+					payload[2] = alpha&0xff;
+					DSI_INFO("%s: alpha [%x]=%x%x  alpha_level = %d backlight level=%d\n ",
+						__func__, payload[0], payload[1], payload[2],alpha_level,
+						lhbm_config->dbv_level);
+				}
 				goto end;
+				rc =  0;
 			} else if(param_info->value == HBM_OFF_STATE &&
 				payload[0] == 0x51) {
 				payload[1] = (lhbm_config->dbv_level&0xff00)>>8;
@@ -4481,6 +4492,21 @@ static int dsi_panel_parse_local_hbm_config(struct dsi_panel *panel)
 			}
 		}
 
+		rc = utils->read_u32(utils->data,
+			"qcom,mdss-dsi-panel-local-hbm-DC-HYBIRD-THRESHOLD-BL",
+			&(lhbm_config->dc_hybird_threshold));
+		if (rc) {
+			DSI_ERR("%s:qcom,mdss-dsi-panel-local-hbm-DC-HYBIRD-THRESHOLD-BL is not defined, set it to 0\n", __func__);
+			lhbm_config->dc_hybird_threshold = 0;
+		}
+
+		rc = utils->read_u32(utils->data,
+			"qcom,mdss-dsi-panel-bl-num",
+			&(lhbm_config->bl_num));
+		if (rc) {
+			DSI_ERR("%s:qcom,mdss-dsi-panel-bl-num is not defined, set it to 0\n", __func__);
+			lhbm_config->bl_num = 0;
+		}
 	} else {
 		DSI_INFO("%s:%d, no local hbm config\n",
 				__func__, __LINE__);

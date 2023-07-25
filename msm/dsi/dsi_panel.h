@@ -253,6 +253,7 @@ struct dsi_panel_spr_info {
 
 struct dsi_panel_lhbm_config {
 	bool enable;
+	u32 dc_hybird_threshold;
 	u32 dbv_level;
 	u32 alpha_reg;
 	u32 alpha_size;
@@ -262,6 +263,7 @@ struct dsi_panel_lhbm_config {
 	u32 lhbm_wait_for_fps_interval;
 	u32 *lhbm_not_allowed_fps_list;
 	u32 lhbm_not_allowed_fps_list_len;
+	u32 	bl_num;
 };
 
 enum panel_idx {
