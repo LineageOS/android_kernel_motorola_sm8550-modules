@@ -1915,7 +1915,7 @@ dev_alloc_err:
 	return -ENODEV;
 }
 
-int ipa_tlpd_stats_init()
+int ipa_tlpd_stats_init(void)
 {
 	int ret;
 

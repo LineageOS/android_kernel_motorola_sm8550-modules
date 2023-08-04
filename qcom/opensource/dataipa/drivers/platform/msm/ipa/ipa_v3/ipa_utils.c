@@ -6800,7 +6800,7 @@ static void _set_coalescing_disposition(
 	}
 }
 
-void start_coalescing()
+void start_coalescing(void)
 {
 	if ( ipa3_ctx->coal_stopped ) {
 		_set_coalescing_disposition(false);
@@ -6808,7 +6808,7 @@ void start_coalescing()
 	}
 }
 
-void stop_coalescing()
+void stop_coalescing(void)
 {
 	if ( ! ipa3_ctx->coal_stopped ) {
 		_set_coalescing_disposition(true);
@@ -6816,7 +6816,7 @@ void stop_coalescing()
 	}
 }
 
-bool lan_coal_enabled()
+bool lan_coal_enabled(void)
 {
 	if ( ipa3_ctx->ipa_initialization_complete ) {
 		int ep_idx;
