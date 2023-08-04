@@ -43,6 +43,10 @@ static void cam_ois_set_init_info(int value)
 }
 #endif
 
+#ifdef CONFIG_MOT_OIS_SEM1217S_DRIVER
+int g_ois_init_finished = 0;
+#endif
+
 int32_t cam_ois_construct_default_power_setting(
 	struct cam_sensor_power_ctrl_t *power_info)
 {
@@ -251,6 +255,10 @@ static int cam_ois_power_down(struct cam_ois_ctrl_t *o_ctrl)
 #ifdef CONFIG_MOT_DONGWOON_OIS_AF_DRIFT
 	if (strstr(o_ctrl->ois_name, "dw9784"))
 		cam_ois_set_init_info(0);
+#endif
+
+#ifdef CONFIG_MOT_OIS_SEM1217S_DRIVER
+	g_ois_init_finished = 0;
 #endif
 
 	camera_io_release(&o_ctrl->io_master_info);
@@ -1051,6 +1059,10 @@ static int cam_ois_pkt_parse(struct cam_ois_ctrl_t *o_ctrl, void *arg)
 #ifdef CONFIG_MOT_DONGWOON_OIS_AF_DRIFT
 		if (strstr(o_ctrl->ois_name, "dw9784"))
 			cam_ois_set_init_info(1);
+#endif
+
+#ifdef CONFIG_MOT_OIS_SEM1217S_DRIVER
+		g_ois_init_finished = 1;
 #endif
 
 		if (o_ctrl->is_ois_calib) {
