@@ -123,6 +123,9 @@ struct cam_actuator_ctrl_t {
 #ifdef CONFIG_MOT_DONGWOON_OIS_AF_DRIFT
 	bool af_drift_supported;
 #endif
+#ifdef CONFIG_MOT_OIS_SEM1217S_DRIVER
+	bool af_ois_use_same_ic;
+#endif
 };
 
 /**
