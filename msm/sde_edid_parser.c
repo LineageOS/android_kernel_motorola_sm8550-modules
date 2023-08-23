@@ -149,6 +149,35 @@ static void sde_edid_extract_vendor_id(struct sde_edid_ctrl *edid_ctrl)
 	SDE_EDID_DEBUG("%s -", __func__);
 }
 
+static void sde_edid_extract_monitor_name(struct sde_edid_ctrl *edid_ctrl)
+{
+	char *monitor_name;
+	int i;
+	struct detailed_timing *detail_data;
+	struct detailed_non_pixel *non_pixel_data;
+
+	SDE_EDID_DEBUG("%s +", __func__);
+	monitor_name = edid_ctrl->monitor_name;
+	if (!edid_ctrl) {
+		SDE_ERROR("%s: invalid input\n", __func__);
+		return;
+	}
+
+	for (i=1; i<4; i++) {
+		detail_data = &edid_ctrl->edid->detailed_timings[i];
+		non_pixel_data = &(detail_data->data.other_data);
+
+		SDE_EDID_DEBUG("%s  type =%x\n", __func__, non_pixel_data->type);
+		if (non_pixel_data->type == 0xfc) {
+			memset(monitor_name, 0, EDID_MONITOR_NAME_SIZE+1);
+			memcpy(monitor_name, (const void *)non_pixel_data->data.str.str, EDID_MONITOR_NAME_SIZE);
+			SDE_EDID_DEBUG("%s name=%s\n", __func__, monitor_name);
+			break;
+		}
+	}
+	SDE_EDID_DEBUG("%s +", __func__);
+}
+
 static void _sde_edid_extract_audio_data_blocks(
 	struct sde_edid_ctrl *edid_ctrl)
 {
@@ -518,6 +547,7 @@ void sde_parse_edid(void *input)
 
 	if (edid_ctrl->edid) {
 		sde_edid_extract_vendor_id(edid_ctrl);
+		sde_edid_extract_monitor_name(edid_ctrl);
 		_sde_edid_extract_audio_data_blocks(edid_ctrl);
 		_sde_edid_extract_speaker_allocation_data(edid_ctrl);
 	} else {

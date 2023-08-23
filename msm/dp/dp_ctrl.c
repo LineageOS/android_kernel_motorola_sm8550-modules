@@ -739,6 +739,28 @@ end:
 	ctrl->training_2_pattern = pattern;
 }
 
+static bool is_allow_downgrade(u8 *monitor_name, int type_index)
+{
+	char *hub_monitor_blacklist[] = {"Y27q-20",NULL};
+	bool is_allow = false;
+	char **monitor_list;
+
+	if(type_index == 0)
+		monitor_list = hub_monitor_blacklist;
+
+	while(*monitor_list != NULL) {
+		DP_INFO("downgrade:value:%s\n", *monitor_list);
+		if(strstr(monitor_name, *monitor_list) != NULL){
+			is_allow = true;
+			DP_INFO("match the monitor name=%s\n", monitor_name);
+			break;
+		}
+		monitor_list++;
+	}
+
+	return is_allow;
+}
+
 static int dp_ctrl_link_setup(struct dp_ctrl_private *ctrl, bool shallow)
 {
 	int rc = -EINVAL;
@@ -746,6 +768,9 @@ static int dp_ctrl_link_setup(struct dp_ctrl_private *ctrl, bool shallow)
 	u32 link_train_max_retries = 100;
 	struct dp_catalog_ctrl *catalog;
 	struct dp_link_params *link_params;
+	struct drm_dp_link *link_info = &ctrl->panel->link_info;
+	int major = (link_info->revision >> 4) & 0x0f;
+	int minor = link_info->revision & 0x0f;
 
 	catalog = ctrl->catalog;
 	link_params = &ctrl->link->link_params;
@@ -758,6 +783,15 @@ static int dp_ctrl_link_setup(struct dp_ctrl_private *ctrl, bool shallow)
 	if (ctrl->parser->dp_downgrade && link_params->lane_count == 2 && link_params->bw_code == DP_LINK_BW_8_1) {
 		DP_INFO("dp_ctrl_link_setup downgrade to DP1.2\n");
 		link_params->bw_code = DP_LINK_BW_5_4;
+	}
+
+	// when there is multiFunc, only 2 lanes can be used by DP, some usb hub can not support dp 1.4, only dp 1.2.
+	// In this scene, when connect monitor with high refresh rate, then insert a charging cable into the hub,
+	// the monitor display will go black, so here we just reduce dp clk rate to make monitor display normal.
+	if (ctrl->parser->dp_downgrade && link_params->lane_count == 2 && major == 1 && minor == 2 &&
+		link_params->bw_code == DP_LINK_BW_5_4 && is_allow_downgrade(ctrl->panel->edid_ctrl->monitor_name, 0)) {
+		DP_INFO("use dp_ctrl_link_rate_down_shift method to downgrade!\n");
+		dp_ctrl_link_rate_down_shift(ctrl);
 	}
 
 	while (1) {
