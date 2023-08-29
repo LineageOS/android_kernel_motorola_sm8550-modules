@@ -399,7 +399,7 @@ static int cam_ois_slaveInfo_pkt_parser(struct cam_ois_ctrl_t *o_ctrl,
 		o_ctrl->io_master_info.cci_client->sid =
 			ois_info->slave_addr >> 1;
 		o_ctrl->ois_fw_flag = ois_info->ois_fw_flag;
-#ifdef CONFIG_MOT_OIS_SEM1217S_DRIVER
+#ifdef CONFIG_MOT_OIS_EARLY_UPGRADE_FW
 		o_ctrl->ois_early_fw_flag = ois_info->ois_early_fw_flag;
 #endif
 		o_ctrl->ois_preprog_flag = ois_info->ois_preprog_flag;
@@ -429,60 +429,6 @@ static int cam_ois_slaveInfo_pkt_parser(struct cam_ois_ctrl_t *o_ctrl,
 
 	return rc;
 }
-
-#ifdef CONFIG_MOT_OIS_SEM1217S_DRIVER
-static int cam_ois_early_fw_prog_download(struct cam_ois_ctrl_t *o_ctrl)
-{
-	int32_t                            rc = 0;
-	const struct firmware             *fw = NULL;
-	const char                        *fw_name_prog = NULL;
-	char                               name_prog[32] = {0};
-	struct device                     *dev = NULL;
-	int i = 0;
-
-	if (!o_ctrl) {
-		CAM_ERR(CAM_OIS, "Invalid Args");
-		return -EINVAL;
-	}
-
-	dev = &(o_ctrl->pdev->dev);
-
-	snprintf(name_prog, 32, "%s.prog", o_ctrl->ois_name);
-
-	/* cast pointer as const pointer*/
-	fw_name_prog = name_prog;
-	CAM_INFO(CAM_OIS, "OIS name is %s", name_prog);
-
-	/* Load FW */
-	rc = request_firmware(&fw, fw_name_prog, dev);
-	if (rc) {
-		CAM_ERR(CAM_OIS, "Failed to locate %s", fw_name_prog);
-		return rc;
-	}
-
-	if (strstr(o_ctrl->ois_name, "sem1217")) {
-		mutex_lock(&o_ctrl->sem1217s_mutex);
-		for (i = 0; i < 3; i++) {
-			rc = sem1217s_fw_update(o_ctrl, fw);
-			if (rc == 0) {
-				CAM_INFO(CAM_OIS, "FW upgrade checked success");
-				break;
-			}
-			CAM_WARN(CAM_OIS, "FW upgrade checked try again, i %d, rc %d", i, rc);
-		}
-
-		if (rc != 0) {
-			CAM_ERR(CAM_OIS, "FW upgrade checked failed");
-		}
-
-		release_firmware(fw);
-		mutex_unlock(&o_ctrl->sem1217s_mutex);
-		return rc;
-	}
-
-	return rc;
-}
-#endif
 
 static int cam_ois_fw_prog_download(struct cam_ois_ctrl_t *o_ctrl)
 {
@@ -1133,7 +1079,7 @@ static int cam_ois_pkt_parse(struct cam_ois_ctrl_t *o_ctrl, void *arg)
 			rc = 0;
 		}
 		break;
-#ifdef CONFIG_MOT_OIS_SEM1217S_DRIVER
+#ifdef CONFIG_MOT_OIS_EARLY_UPGRADE_FW
 	case CAM_OIS_PACKET_OPCODE_OIS_FW_UPGRADE:
 	{
 		CAM_INFO(CAM_OIS, "CAM_OIS_PACKET_OPCODE_OIS_FW_UPGRADE");
@@ -1212,7 +1158,7 @@ static int cam_ois_pkt_parse(struct cam_ois_ctrl_t *o_ctrl, void *arg)
 		CAM_INFO(CAM_OIS, "ois_fw_flag %d, ois_early_fw_flag %d", o_ctrl->ois_fw_flag, o_ctrl->ois_early_fw_flag);
 		if (o_ctrl->ois_early_fw_flag == 1) {
 			CAM_INFO(CAM_OIS, "OIS early fw update enabled");
-			rc = cam_ois_early_fw_prog_download(o_ctrl);
+			rc = cam_ois_fw_prog_download(o_ctrl);
 			return rc;
 		}
 	}

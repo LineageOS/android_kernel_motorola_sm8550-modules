@@ -177,6 +177,8 @@ struct cam_ois_ctrl_t {
 #endif
 #ifdef CONFIG_MOT_OIS_SEM1217S_DRIVER
 	struct mutex sem1217s_mutex;
+#endif
+#ifdef CONFIG_MOT_OIS_EARLY_UPGRADE_FW
 	uint8_t ois_early_fw_flag;
 #endif
 };
