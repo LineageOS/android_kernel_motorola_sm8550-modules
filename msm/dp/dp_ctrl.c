@@ -742,11 +742,14 @@ end:
 static bool is_allow_downgrade(u8 *monitor_name, int type_index)
 {
 	char *hub_monitor_blacklist[] = {"Y27q-20",NULL};
+	char *dp_monitor_blacklist[] = {"P27h-30","P32p-30","Y27q-20",NULL};
 	bool is_allow = false;
 	char **monitor_list;
 
 	if(type_index == 0)
 		monitor_list = hub_monitor_blacklist;
+	else
+		monitor_list = dp_monitor_blacklist;
 
 	while(*monitor_list != NULL) {
 		DP_INFO("downgrade:value:%s\n", *monitor_list);
@@ -791,6 +794,13 @@ static int dp_ctrl_link_setup(struct dp_ctrl_private *ctrl, bool shallow)
 	if (ctrl->parser->dp_downgrade && link_params->lane_count == 2 && major == 1 && minor == 2 &&
 		link_params->bw_code == DP_LINK_BW_5_4 && is_allow_downgrade(ctrl->panel->edid_ctrl->monitor_name, 0)) {
 		DP_INFO("use dp_ctrl_link_rate_down_shift method to downgrade!\n");
+		dp_ctrl_link_rate_down_shift(ctrl);
+	}
+
+	if (ctrl->parser->dp_downgrade && link_params->lane_count == 4 &&
+		link_params->bw_code == DP_LINK_BW_8_1 && is_allow_downgrade(ctrl->panel->edid_ctrl->monitor_name, 1)) {
+		DP_INFO("dp_ctrl_link_setup downgrade to DP_LINK_BW_5_4!\n");
+		ctrl->initial_bw_code = DP_LINK_BW_5_4;
 		dp_ctrl_link_rate_down_shift(ctrl);
 	}
 
