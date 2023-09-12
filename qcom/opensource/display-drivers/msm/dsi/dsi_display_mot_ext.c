@@ -1094,8 +1094,8 @@ static void dsi_display_show_para(char* buf, char* pbuf, enum dsi_cmd_set_type t
 	int i,j,rc;
 	u8* data;
 	int count = priv_info->cmd_sets[type].count;
-	char ptembuf[LCD_PARA_TEM_BUF_LEN];
-	char pLineBuf[LCD_PARA_LINE_LEN];
+	char * ptembuf = kmalloc(LCD_PARA_TEM_BUF_LEN, GFP_KERNEL);
+	char * pLineBuf = kmalloc(LCD_PARA_LINE_LEN, GFP_KERNEL);
 
 	memset(pLineBuf, 0, LCD_PARA_LINE_LEN);
 	rc = snprintf(pLineBuf, LCD_PARA_LINE_LEN, "#[%s]#: count:%d\n", cmd_set_prop_map[type], count);
@@ -1135,8 +1135,8 @@ static void dsi_display_show_panel_para(char* buf, char* pbuf, enum msm_param_id
 	int i,j,rc;
 	u8* data;
 	int count = 0;
-	char ptembuf[LCD_PARA_TEM_BUF_LEN];
-	char pLineBuf[LCD_PARA_LINE_LEN];
+	char * ptembuf = kmalloc(LCD_PARA_TEM_BUF_LEN, GFP_KERNEL);
+	char * pLineBuf = kmalloc(LCD_PARA_LINE_LEN, GFP_KERNEL);
 
 	struct panel_param *param;
 	struct panel_param_val_map *param_map;
