@@ -26,7 +26,7 @@
 #define SSR_RESET_CMD 1
 #define IMAGE_UNLOAD_CMD 0
 #define MAX_FW_IMAGES 4
-#define ADSP_LOADER_APM_TIMEOUT_MS 10000
+#define ADSP_LOADER_APM_TIMEOUT_MS 20000
 
 enum spf_subsys_state {
 	SPF_SUBSYS_DOWN,
