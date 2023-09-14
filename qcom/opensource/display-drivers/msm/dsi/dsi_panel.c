@@ -1420,7 +1420,7 @@ int dsi_panel_set_param(struct dsi_panel *panel,
 
 	switch (param_info->param_idx) {
 		case PARAM_HBM_ID :
-			dsi_panel_set_hbm(panel, param_info);
+			rc = dsi_panel_set_hbm(panel, param_info);
 			break;
 		case PARAM_CABC_ID :
 			dsi_panel_set_cabc(panel, param_info);
