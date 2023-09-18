@@ -84,6 +84,7 @@ struct msm_asoc_mach_data {
 	struct device_node *dmic23_gpio_p; /* used by pinctrl API */
 	struct device_node *dmic45_gpio_p; /* used by pinctrl API */
 	struct device_node *dmic67_gpio_p; /* used by pinctrl API */
+	struct device_node *dmic_micbias_gpio_p; /* used by pinctrl API */
 	struct pinctrl *usbc_en2_gpio_p; /* used by pinctrl API */
 	bool is_afe_config_done;
 	struct device_node *fsa_handle;
@@ -380,6 +381,15 @@ static int msm_dmic_event(struct snd_soc_dapm_widget *w,
 
 	switch (event) {
 	case SND_SOC_DAPM_PRE_PMU:
+		if (pdata->dmic_micbias_gpio_p) {
+			ret = msm_cdc_pinctrl_select_active_state(
+						pdata->dmic_micbias_gpio_p);
+			if (ret < 0) {
+				pr_err_ratelimited("%s: micbias gpio set cannot be activated %sd",
+					__func__, "pdata->dmic_micbias_gpio_p");
+				return ret;
+			}
+		}
 		(*dmic_gpio_cnt)++;
 		if (*dmic_gpio_cnt == 1) {
 			ret = msm_cdc_pinctrl_select_active_state(
@@ -393,6 +403,15 @@ static int msm_dmic_event(struct snd_soc_dapm_widget *w,
 
 		break;
 	case SND_SOC_DAPM_POST_PMD:
+		if (pdata->dmic_micbias_gpio_p) {
+			ret = msm_cdc_pinctrl_select_sleep_state(
+						pdata->dmic_micbias_gpio_p);
+			if (ret < 0) {
+				pr_err_ratelimited("%s: micbias gpio set cannot be de-activated %sd",
+					__func__, "pdata->dmic_micbias_gpio_p");
+				return ret;
+			}
+		}
 		(*dmic_gpio_cnt)--;
 		if (*dmic_gpio_cnt == 0) {
 			ret = msm_cdc_pinctrl_select_sleep_state(
@@ -2186,6 +2205,9 @@ static int msm_asoc_machine_probe(struct platform_device *pdev)
 	pdata->dmic67_gpio_p = of_parse_phandle(pdev->dev.of_node,
 						  "qcom,cdc-dmic67-gpios",
 						   0);
+	pdata->dmic_micbias_gpio_p = of_parse_phandle(pdev->dev.of_node,
+						  "qcom,dmic-micbias-en-gpio",
+						   0);
 	if (pdata->dmic01_gpio_p)
 		msm_cdc_pinctrl_set_wakeup_capable(pdata->dmic01_gpio_p, false);
 	if (pdata->dmic23_gpio_p)
@@ -2194,6 +2216,10 @@ static int msm_asoc_machine_probe(struct platform_device *pdev)
 		msm_cdc_pinctrl_set_wakeup_capable(pdata->dmic45_gpio_p, false);
 	if (pdata->dmic67_gpio_p)
 		msm_cdc_pinctrl_set_wakeup_capable(pdata->dmic67_gpio_p, false);
+	if (pdata->dmic_micbias_gpio_p) {
+		pr_err("%s: micbias gpio set\n",__func__);
+		msm_cdc_pinctrl_set_wakeup_capable(pdata->dmic_micbias_gpio_p, false);
+		}
 
 	msm_common_snd_init(pdev, card);
 
