@@ -52,7 +52,7 @@ int32_t cam_actuator_parse_dt(struct cam_actuator_ctrl_t *a_ctrl,
 	CAM_DBG(CAM_ACTUATOR, "af-drift-support %d", a_ctrl->af_drift_supported);
 #endif
 
-#ifdef CONFIG_MOT_OIS_SEM1217S_DRIVER
+#if defined(CONFIG_MOT_OIS_SEM1217S_DRIVER) || defined(CONFIG_MOT_OIS_DW9784_DRIVER)
 	if (!of_property_read_bool(of_node, "af-ois-use-same-ic")) {
 		a_ctrl->af_ois_use_same_ic = false;
 	} else {

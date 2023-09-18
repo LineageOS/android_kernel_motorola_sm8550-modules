@@ -17,7 +17,7 @@ extern int cam_ois_get_init_info(void);
 extern int cam_ois_write_af_drift(uint32_t dac);
 #endif
 
-#ifdef CONFIG_MOT_OIS_SEM1217S_DRIVER
+#if defined(CONFIG_MOT_OIS_SEM1217S_DRIVER) || defined(CONFIG_MOT_OIS_DW9784_DRIVER)
 extern int g_ois_init_finished;
 #endif
 
@@ -268,7 +268,7 @@ int32_t cam_actuator_apply_settings(struct cam_actuator_ctrl_t *a_ctrl,
 	uint32_t dac = 0;
 #endif
 
-#ifdef CONFIG_MOT_OIS_SEM1217S_DRIVER
+#if defined(CONFIG_MOT_OIS_SEM1217S_DRIVER) || defined(CONFIG_MOT_OIS_DW9784_DRIVER)
 	if (a_ctrl->af_ois_use_same_ic == true &&
 		g_ois_init_finished == 0) {
 			CAM_INFO(CAM_ACTUATOR, "OIS does NOT finish to init, skip writed AF setting to avoid break AF function");

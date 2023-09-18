@@ -43,7 +43,7 @@ static void cam_ois_set_init_info(int value)
 }
 #endif
 
-#ifdef CONFIG_MOT_OIS_SEM1217S_DRIVER
+#if defined(CONFIG_MOT_OIS_SEM1217S_DRIVER) || defined(CONFIG_MOT_OIS_DW9784_DRIVER)
 int g_ois_init_finished = 0;
 #endif
 
@@ -257,7 +257,7 @@ static int cam_ois_power_down(struct cam_ois_ctrl_t *o_ctrl)
 		cam_ois_set_init_info(0);
 #endif
 
-#ifdef CONFIG_MOT_OIS_SEM1217S_DRIVER
+#if defined(CONFIG_MOT_OIS_SEM1217S_DRIVER) || defined(CONFIG_MOT_OIS_DW9784_DRIVER)
 	g_ois_init_finished = 0;
 #endif
 
@@ -1007,7 +1007,7 @@ static int cam_ois_pkt_parse(struct cam_ois_ctrl_t *o_ctrl, void *arg)
 			cam_ois_set_init_info(1);
 #endif
 
-#ifdef CONFIG_MOT_OIS_SEM1217S_DRIVER
+#if defined(CONFIG_MOT_OIS_SEM1217S_DRIVER) || defined(CONFIG_MOT_OIS_DW9784_DRIVER)
 		g_ois_init_finished = 1;
 #endif
 

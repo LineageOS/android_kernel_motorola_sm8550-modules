@@ -62,6 +62,10 @@ else ifneq (,$(filter ctwo, $(TARGET_PRODUCT)))
 include $(CAMERA_KERNEL_ROOT)/config/ctwo.mk
 else ifneq (,$(filter ctwo_factory, $(TARGET_PRODUCT)))
 include $(CAMERA_KERNEL_ROOT)/config/ctwo_factory.mk
+else ifneq (,$(filter eqe, $(TARGET_PRODUCT)))
+include $(CAMERA_KERNEL_ROOT)/config/eqe.mk
+else ifneq (,$(filter eqe_factory, $(TARGET_PRODUCT)))
+include $(CAMERA_KERNEL_ROOT)/config/eqe_factory.mk
 endif
 
 # For some targets which have binary compatible gki kernel with another one,
