@@ -4,6 +4,8 @@
  * Copyright (c) 2021-2023. Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
+#define DEBUG 1
+
 #include <linux/clk.h>
 #include <linux/delay.h>
 #include <linux/gpio.h>
@@ -2075,6 +2077,8 @@ static int msm_asoc_machine_probe(struct platform_device *pdev)
 	int ret = 0;
 	struct clk *lpass_audio_hw_vote = NULL;
 	const struct of_device_id *match;
+
+	dev_dbg(&pdev->dev, "%s, enter", __func__);
 
 	if (!pdev->dev.of_node) {
 		dev_err(&pdev->dev, "%s: No platform supplied from device tree\n", __func__);
