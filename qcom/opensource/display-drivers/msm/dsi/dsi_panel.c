@@ -6233,7 +6233,7 @@ error:
 		DSI_INFO("-: ensure dc mode is set\n");
 		panel->curDCModeParaInfo.value = 0;
 		dsi_panel_send_param_cmd(panel, &panel->curDCModeParaInfo);
-		panel->curDCModeParaInfo.value = panel->dc_state;
+		panel->curDCModeParaInfo.value = 1; // dc_state is overridden by dsi_panel_send_param_cmd
 		dsi_panel_send_param_cmd(panel, &panel->curDCModeParaInfo);
 	}
 	return rc;
