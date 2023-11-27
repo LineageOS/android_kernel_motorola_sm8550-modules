@@ -150,7 +150,6 @@ struct cam_sensor_ctrl_t {
 	bool                           stream_off_after_eof;
 	bool                           hw_no_ops;
 	bool                           is_res_info_updated;
-	uint32_t                       batch_number;
 #ifdef CONFIG_CCI_ADDR_SWITCH
 	/* add i2c addr switch support*/
 	uint8_t                        i2c_addr_switch;
