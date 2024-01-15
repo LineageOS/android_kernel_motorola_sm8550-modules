@@ -6800,7 +6800,7 @@ static void _set_coalescing_disposition(
 	}
 }
 
-void start_coalescing()
+void start_coalescing(void)
 {
 	if ( ipa3_ctx->coal_stopped ) {
 		_set_coalescing_disposition(false);
@@ -6808,7 +6808,7 @@ void start_coalescing()
 	}
 }
 
-void stop_coalescing()
+void stop_coalescing(void)
 {
 	if ( ! ipa3_ctx->coal_stopped ) {
 		_set_coalescing_disposition(true);
@@ -6816,9 +6816,9 @@ void stop_coalescing()
 	}
 }
 
-bool lan_coal_enabled()
+bool lan_coal_enabled(void)
 {
-	if ( ipa3_ctx->ipa_initialization_complete ) {
+	if ( ipa3_ctx->ipa_initialization_complete && ipa3_ctx->lan_coal_enable) {
 		int ep_idx;
 		if ( IPA_CLIENT_IS_MAPPED_VALID(IPA_CLIENT_APPS_LAN_COAL_CONS, ep_idx) ) {
 			return true;
