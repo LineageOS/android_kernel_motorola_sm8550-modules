@@ -90,29 +90,29 @@ else
 USE_TARGET_PRODUCT := $(TARGET_PRODUCT)
 endif
 
-ifneq ($(filter oneli, $(USE_TARGET_PRODUCT)), )
+ifneq ($(findstring oneli, $(USE_TARGET_PRODUCT)), )
         EXTRA_CFLAGS += -DPRODUCT_ONELI
-else ifneq ($(filter hiphi, $(USE_TARGET_PRODUCT)), )
+else ifneq ($(findstring hiphi, $(USE_TARGET_PRODUCT)), )
         EXTRA_CFLAGS += -DPRODUCT_HIPHI
-else ifneq ($(filter hiphic, $(USE_TARGET_PRODUCT)), )
+else ifneq ($(findstring hiphic, $(USE_TARGET_PRODUCT)), )
         EXTRA_CFLAGS += -DPRODUCT_HIPHIC
-else ifneq ($(filter li, $(USE_TARGET_PRODUCT)), )
+else ifneq ($(findstring li, $(USE_TARGET_PRODUCT)), )
         EXTRA_CFLAGS += -DPRODUCT_LI
-else ifneq ($(filter eqs, $(USE_TARGET_PRODUCT)), )
+else ifneq ($(findstring eqs, $(USE_TARGET_PRODUCT)), )
         EXTRA_CFLAGS += -DPRODUCT_EQS
-else ifneq ($(filter tundra%, $(USE_TARGET_PRODUCT)), )
+else ifneq ($(findstring tundra, $(USE_TARGET_PRODUCT)), )
         EXTRA_CFLAGS += -DPRODUCT_TUNDRA
-else ifneq ($(filter miami%, $(USE_TARGET_PRODUCT)), )
+else ifneq ($(findstring miami, $(USE_TARGET_PRODUCT)), )
         EXTRA_CFLAGS += -DPRODUCT_MIAMI
-else ifneq ($(filter rtwo%, $(USE_TARGET_PRODUCT)), )
+else ifneq ($(findstring rtwo, $(USE_TARGET_PRODUCT)), )
         EXTRA_CFLAGS += -DPRODUCT_RTWO
-else ifneq ($(filter ctwo%, $(USE_TARGET_PRODUCT)), )
+else ifneq ($(findstring ctwo, $(USE_TARGET_PRODUCT)), )
         EXTRA_CFLAGS += -DPRODUCT_CTWO
-else ifneq ($(filter bronco, $(USE_TARGET_PRODUCT)), )
+else ifneq ($(findstring bronco, $(USE_TARGET_PRODUCT)), )
         EXTRA_CFLAGS += -DPRODUCT_BRONCO
-else ifneq ($(filter felix, $(USE_TARGET_PRODUCT)), )
+else ifneq ($(findstring felix, $(USE_TARGET_PRODUCT)), )
         EXTRA_CFLAGS += -DCONFIG_GTP_DISP_MODE
-else ifneq ($(filter zeekr%, $(USE_TARGET_PRODUCT)), )
+else ifneq ($(findstring zeekr, $(USE_TARGET_PRODUCT)), )
         EXTRA_CFLAGS += -DPRODUCT_ZEEKR
 else ifneq ($(filter lynkco%, $(USE_TARGET_PRODUCT)), )
         EXTRA_CFLAGS += -DPRODUCT_LYNKCO
