@@ -54,18 +54,18 @@ else ifneq (,$(filter oneli oneli_factory, $(TARGET_PRODUCT)))
 include $(CAMERA_KERNEL_ROOT)/config/oneli.mk
 else ifneq (,$(filter eqs eqs_factory, $(TARGET_PRODUCT)))
 include $(CAMERA_KERNEL_ROOT)/config/eqs.mk
-else ifneq (,$(filter rtwo, $(TARGET_PRODUCT)))
-include $(CAMERA_KERNEL_ROOT)/config/rtwo.mk
-else ifneq (,$(filter rtwo_factory, $(TARGET_PRODUCT)))
+else ifneq (,$(findstring rtwo_factory, $(TARGET_PRODUCT)))
 include $(CAMERA_KERNEL_ROOT)/config/rtwo_factory.mk
-else ifneq (,$(filter ctwo, $(TARGET_PRODUCT)))
-include $(CAMERA_KERNEL_ROOT)/config/ctwo.mk
-else ifneq (,$(filter ctwo_factory, $(TARGET_PRODUCT)))
+else ifneq (,$(findstring rtwo, $(TARGET_PRODUCT)))
+include $(CAMERA_KERNEL_ROOT)/config/rtwo.mk
+else ifneq (,$(findstring ctwo_factory, $(TARGET_PRODUCT)))
 include $(CAMERA_KERNEL_ROOT)/config/ctwo_factory.mk
-else ifneq (,$(filter eqe, $(TARGET_PRODUCT)))
-include $(CAMERA_KERNEL_ROOT)/config/eqe.mk
-else ifneq (,$(filter eqe_factory, $(TARGET_PRODUCT)))
+else ifneq (,$(findstring ctwo, $(TARGET_PRODUCT)))
+include $(CAMERA_KERNEL_ROOT)/config/ctwo.mk
+else ifneq (,$(findstring eqe_factory, $(TARGET_PRODUCT)))
 include $(CAMERA_KERNEL_ROOT)/config/eqe_factory.mk
+else ifneq (,$(findstring eqe, $(TARGET_PRODUCT)))
+include $(CAMERA_KERNEL_ROOT)/config/eqe.mk
 endif
 
 # For some targets which have binary compatible gki kernel with another one,
