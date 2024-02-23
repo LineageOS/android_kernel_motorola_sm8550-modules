@@ -147,8 +147,7 @@ static const struct wsa_reg_mask_val reg_init_2S[] = {
 
 static const struct wsa_reg_mask_val reg_init_uvlo[] = {
     {WSA884X_UVLO_PROG, 0xFF, 0x77},
-    {WSA884X_PA_FSM_TIMER0, 0xFF, 0xC0},
-    {WSA884X_UVLO_DEGLITCH_CTL, 0xFF, 0x1D},
+    {WSA884X_UVLO_DEGLITCH_CTL, 0xFF, 0x1B},
     {WSA884X_UVLO_PROG1, 0xFF, 0x40},
 };
 
@@ -1544,6 +1543,10 @@ static void wsa884x_codec_init(struct snd_soc_component *component)
 		snd_soc_component_update_bits(component, reg_init[i].reg,
 					reg_init[i].mask, reg_init[i].val);
 
+	if (wsa884x->boost_voltage_11v)
+		snd_soc_component_update_bits(component,
+					REG_FIELD_VALUE(CLSH_SOFT_MAX, SOFT_MAX, 0x8C));
+
 	/* Register updates for 2S battery configuration */
 	if (wsa884x->bat_cfg == CONFIG_2S) {
 		for (i = 0; i < ARRAY_SIZE(reg_init_2S); i++)
@@ -2022,6 +2025,11 @@ static int wsa884x_swr_probe(struct swr_device *pdev)
 		goto err;
 	}
 
+	wsa884x->boost_voltage_11v = of_property_read_bool(pdev->dev.of_node,
+				"qcom,boost_voltage_11v");
+	dev_info(&pdev->dev,
+		"%s: boost_voltage_11v: %d\n", __func__, wsa884x->boost_voltage_11v);
+
 	wsa884x->wsa_rst_np = of_parse_phandle(pdev->dev.of_node,
 					     "qcom,spkr-sd-n-node", 0);
 	if (!wsa884x->wsa_rst_np) {
@@ -2248,7 +2256,7 @@ static int wsa884x_swr_probe(struct swr_device *pdev)
 				goto err_mem;
 			}
 
-			sys_gain_length = sys_gain_size / (2 * sizeof(u32));
+			sys_gain_length = sys_gain_size / (sizeof(u32));
 			ret = of_property_read_u32_array(
 				wsa884x->macro_dev->dev.of_node,
 				"qcom,wsa-system-gains", wsa884x->sys_gains,

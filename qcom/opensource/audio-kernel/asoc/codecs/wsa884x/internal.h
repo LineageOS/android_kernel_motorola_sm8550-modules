@@ -401,6 +401,7 @@ struct wsa884x_priv {
 	struct snd_soc_dai_driver *dai_driver;
 	struct snd_soc_component_driver *driver;
 	int noise_gate_mode;
+	bool boost_voltage_11v;
 };
 
 #endif /* WSA884X_INTERNAL_H */

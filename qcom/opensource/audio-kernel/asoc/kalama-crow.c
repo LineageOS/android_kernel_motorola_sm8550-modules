@@ -4,6 +4,8 @@
  * Copyright (c) 2021-2023. Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
+#define DEBUG 1
+
 #include <linux/clk.h>
 #include <linux/delay.h>
 #include <linux/gpio.h>
@@ -31,7 +33,6 @@
 #include <dsp/audio_prm.h>
 #include <soc/swr-common.h>
 #include <soc/soundwire.h>
-#include <soc/qcom/socinfo.h>
 #include "device_event.h"
 #include "asoc/msm-cdc-pinctrl.h"
 #include "asoc/wcd-mbhc-v2.h"
@@ -84,7 +85,6 @@ struct msm_asoc_mach_data {
 	struct device_node *dmic23_gpio_p; /* used by pinctrl API */
 	struct device_node *dmic45_gpio_p; /* used by pinctrl API */
 	struct device_node *dmic67_gpio_p; /* used by pinctrl API */
-	struct device_node *dmic_micbias_gpio_p; /* used by pinctrl API */
 	struct pinctrl *usbc_en2_gpio_p; /* used by pinctrl API */
 	bool is_afe_config_done;
 	struct device_node *fsa_handle;
@@ -381,15 +381,6 @@ static int msm_dmic_event(struct snd_soc_dapm_widget *w,
 
 	switch (event) {
 	case SND_SOC_DAPM_PRE_PMU:
-		if (pdata->dmic_micbias_gpio_p) {
-			ret = msm_cdc_pinctrl_select_active_state(
-						pdata->dmic_micbias_gpio_p);
-			if (ret < 0) {
-				pr_err_ratelimited("%s: micbias gpio set cannot be activated %sd",
-					__func__, "pdata->dmic_micbias_gpio_p");
-				return ret;
-			}
-		}
 		(*dmic_gpio_cnt)++;
 		if (*dmic_gpio_cnt == 1) {
 			ret = msm_cdc_pinctrl_select_active_state(
@@ -403,15 +394,6 @@ static int msm_dmic_event(struct snd_soc_dapm_widget *w,
 
 		break;
 	case SND_SOC_DAPM_POST_PMD:
-		if (pdata->dmic_micbias_gpio_p) {
-			ret = msm_cdc_pinctrl_select_sleep_state(
-						pdata->dmic_micbias_gpio_p);
-			if (ret < 0) {
-				pr_err_ratelimited("%s: micbias gpio set cannot be de-activated %sd",
-					__func__, "pdata->dmic_micbias_gpio_p");
-				return ret;
-			}
-		}
 		(*dmic_gpio_cnt)--;
 		if (*dmic_gpio_cnt == 0) {
 			ret = msm_cdc_pinctrl_select_sleep_state(
@@ -1015,7 +997,7 @@ static struct snd_soc_dai_link msm_mi2s_dai_links[] = {
 		.ops = &msm_common_be_ops,
 		.ignore_suspend = 1,
 		.ignore_pmdown_time = 1,
-		SND_SOC_DAILINK_REG(quin_mi2s_rx),
+		SND_SOC_DAILINK_REG(quin_mi2s_rx_aw882xx),
 	},
 	{
 		.name = LPASS_BE_QUIN_MI2S_TX,
@@ -1025,7 +1007,7 @@ static struct snd_soc_dai_link msm_mi2s_dai_links[] = {
 			SND_SOC_DPCM_TRIGGER_POST},
 		.ops = &msm_common_be_ops,
 		.ignore_suspend = 1,
-		SND_SOC_DAILINK_REG(quin_mi2s_tx),
+		SND_SOC_DAILINK_REG(quin_mi2s_tx_aw882xx),
 	},
 	{
 		.name = LPASS_BE_SEN_MI2S_RX,
@@ -1538,14 +1520,12 @@ static struct snd_soc_card *populate_snd_card_dailinks(struct device *dev, int w
 		rc = of_property_read_u32(dev->of_node,
 					   "qcom,ext-disp-audio-rx", &val);
 		if (!rc && val) {
-			if (!socinfo_get_part_info(PART_DISPLAY)) {
-				dev_dbg(dev, "%s(): ext disp audio supported\n",
-					__func__);
-				memcpy(msm_kalama_dai_links + total_links,
-					ext_disp_be_dai_link,
-						sizeof(ext_disp_be_dai_link));
-				total_links += ARRAY_SIZE(ext_disp_be_dai_link);
-			}
+			dev_dbg(dev, "%s(): ext disp audio supported\n",
+				__func__);
+			memcpy(msm_kalama_dai_links + total_links,
+				ext_disp_be_dai_link,
+					sizeof(ext_disp_be_dai_link));
+			total_links += ARRAY_SIZE(ext_disp_be_dai_link);
 		}
 
 		rc = of_property_read_u32(dev->of_node, "qcom,wcn-bt", &val);
@@ -2098,6 +2078,8 @@ static int msm_asoc_machine_probe(struct platform_device *pdev)
 	struct clk *lpass_audio_hw_vote = NULL;
 	const struct of_device_id *match;
 
+	dev_dbg(&pdev->dev, "%s, enter", __func__);
+
 	if (!pdev->dev.of_node) {
 		dev_err(&pdev->dev, "%s: No platform supplied from device tree\n", __func__);
 		return -EINVAL;
@@ -2205,9 +2187,6 @@ static int msm_asoc_machine_probe(struct platform_device *pdev)
 	pdata->dmic67_gpio_p = of_parse_phandle(pdev->dev.of_node,
 						  "qcom,cdc-dmic67-gpios",
 						   0);
-	pdata->dmic_micbias_gpio_p = of_parse_phandle(pdev->dev.of_node,
-						  "qcom,dmic-micbias-en-gpio",
-						   0);
 	if (pdata->dmic01_gpio_p)
 		msm_cdc_pinctrl_set_wakeup_capable(pdata->dmic01_gpio_p, false);
 	if (pdata->dmic23_gpio_p)
@@ -2216,10 +2195,6 @@ static int msm_asoc_machine_probe(struct platform_device *pdev)
 		msm_cdc_pinctrl_set_wakeup_capable(pdata->dmic45_gpio_p, false);
 	if (pdata->dmic67_gpio_p)
 		msm_cdc_pinctrl_set_wakeup_capable(pdata->dmic67_gpio_p, false);
-	if (pdata->dmic_micbias_gpio_p) {
-		pr_err("%s: micbias gpio set\n",__func__);
-		msm_cdc_pinctrl_set_wakeup_capable(pdata->dmic_micbias_gpio_p, false);
-		}
 
 	msm_common_snd_init(pdev, card);
 
