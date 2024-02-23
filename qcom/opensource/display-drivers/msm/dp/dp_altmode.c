@@ -16,7 +16,6 @@
 #include "dp_debug.h"
 #include "sde_dbg.h"
 
-
 #define ALTMODE_CONFIGURE_MASK (0x3f)
 #define ALTMODE_HPD_STATE_MASK (0x40)
 #define ALTMODE_HPD_IRQ_MASK (0x80)
@@ -28,8 +27,15 @@ struct dp_altmode_private {
 	struct dp_altmode dp_altmode;
 	struct altmode_client *amclient;
 	bool connected;
+	bool typec_bridge;
 	u32 lanes;
 };
+
+#if IS_ENABLED(CONFIG_TYPEC_QTI_ALTMODE)
+extern int dp_altmode_typec_bridge_register(struct dp_altmode_private *altmode, int (*cb)(void *, void *, size_t));
+#else
+static int dp_altmode_typec_bridge_register(struct dp_altmode_private *altmode, int (*cb)(void *, void *, size_t)) { return -ENOTSUPP; }
+#endif
 
 enum dp_altmode_pin_assignment {
 	DPAM_HPD_OUT,
@@ -104,7 +110,7 @@ static void dp_altmode_send_pan_ack(struct altmode_client *amclient,
 		return;
 	}
 
-	DP_DEBUG("port=%d\n", port_index);
+	DP_INFO("port=%d\n", port_index);
 }
 
 static int dp_altmode_notify(void *priv, void *data, size_t len)
@@ -125,19 +131,27 @@ static int dp_altmode_notify(void *priv, void *data, size_t len)
 	hpd_state = (dp_data & ALTMODE_HPD_STATE_MASK) >> 6;
 	hpd_irq = (dp_data & ALTMODE_HPD_IRQ_MASK) >> 7;
 
+	// Motorola, zhanggb, 12/02/2022, IKSWT-49412
+	// Scene: Continous hdp_high=0 then hdp_high=1, aux may switch off by mistake
+	// Workaround: Ignore subsequent hpd_high=0 if already connected
+	if (altmode->connected && !altmode->dp_altmode.base.hpd_high && pin) {
+		if (!!hpd_state == false && !!hpd_irq == 0) {
+			DP_INFO("Dup hpd low notified during connected, ignore it!\n");
+			goto ack;
+		}
+	}
+
 	altmode->dp_altmode.base.hpd_high = !!hpd_state;
 	altmode->dp_altmode.base.hpd_irq = !!hpd_irq;
 	altmode->dp_altmode.base.multi_func = force_multi_func ? true :
 		!(pin == DPAM_HPD_C || pin == DPAM_HPD_E || pin == DPAM_HPD_OUT);
 
-	DP_DEBUG("payload=0x%x\n", dp_data);
-	DP_DEBUG("port_index=%d, orientation=%d, pin=%d, hpd_state=%d\n",
-			port_index, orientation, pin, hpd_state);
-	DP_DEBUG("multi_func=%d, hpd_high=%d, hpd_irq=%d\n",
+	DP_INFO("connected=%d payload=0x%x port_index=%d, orientation=%d, pin=%d, hpd_state=%d\n",
+			altmode->connected, dp_data, port_index, orientation, pin, hpd_state);
+	DP_INFO("multi_func=%d, hpd_high=%d, hpd_irq=%d\n",
 			altmode->dp_altmode.base.multi_func,
 			altmode->dp_altmode.base.hpd_high,
 			altmode->dp_altmode.base.hpd_irq);
-	DP_DEBUG("connected=%d\n", altmode->connected);
 	SDE_EVT32_EXTERNAL(dp_data, port_index, orientation, pin, hpd_state,
 			altmode->dp_altmode.base.multi_func,
 			altmode->dp_altmode.base.hpd_high,
@@ -169,7 +183,7 @@ static int dp_altmode_notify(void *priv, void *data, size_t len)
 		if (altmode->dp_altmode.base.multi_func)
 			altmode->lanes = 2;
 
-		DP_DEBUG("Connected=%d, lanes=%d\n",altmode->connected,altmode->lanes);
+		DP_INFO("Connected=%d, lanes=%d\n",altmode->connected,altmode->lanes);
 
 		switch (orientation) {
 		case 0:
@@ -204,7 +218,8 @@ static int dp_altmode_notify(void *priv, void *data, size_t len)
 	if (altmode->dp_cb && altmode->dp_cb->attention)
 		altmode->dp_cb->attention(altmode->dev);
 ack:
-	dp_altmode_send_pan_ack(altmode->amclient, port_index);
+	if (!altmode->typec_bridge)
+		dp_altmode_send_pan_ack(altmode->amclient, port_index);
 	return rc;
 }
 
@@ -269,7 +284,7 @@ static int dp_altmode_simulate_attention(struct dp_hpd *dp_hpd, int vdo)
 	return 0;
 }
 
-struct dp_hpd *dp_altmode_get(struct device *dev, struct dp_hpd_cb *cb)
+struct dp_hpd *dp_altmode_get(struct device *dev, struct dp_hpd_cb *cb, bool typec_bridge)
 {
 	int rc = 0;
 	struct dp_altmode_private *altmode;
@@ -292,10 +307,15 @@ struct dp_hpd *dp_altmode_get(struct device *dev, struct dp_hpd_cb *cb)
 	dp_altmode->base.simulate_connect = dp_altmode_simulate_connect;
 	dp_altmode->base.simulate_attention = dp_altmode_simulate_attention;
 
-	rc = altmode_register_notifier(dev, dp_altmode_register, altmode);
-	if (rc < 0) {
-		DP_ERR("altmode probe notifier registration failed: %d\n", rc);
-		goto error;
+	if (typec_bridge) {
+		altmode->typec_bridge = true;
+		dp_altmode_typec_bridge_register(altmode, dp_altmode_notify);
+	} else {
+		rc = altmode_register_notifier(dev, dp_altmode_register, altmode);
+		if (rc < 0) {
+			DP_ERR("altmode probe notifier registration failed: %d\n", rc);
+			goto error;
+		}
 	}
 
 	DP_DEBUG("success\n");

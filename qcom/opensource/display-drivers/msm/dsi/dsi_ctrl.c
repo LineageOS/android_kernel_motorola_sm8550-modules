@@ -2953,6 +2953,20 @@ void dsi_ctrl_enable_status_interrupt(struct dsi_ctrl *dsi_ctrl,
 
 	spin_lock_irqsave(&dsi_ctrl->irq_info.irq_lock, flags);
 
+	if (intr_idx == DSI_SINT_CMD_MODE_DMA_DONE) {
+		if (dsi_ctrl->irq_info.irq_stat_refcount[intr_idx]) {
+			dsi_ctrl->refcount_non_zero++;
+			SDE_EVT32(dsi_ctrl->refcount_non_zero);
+			if (dsi_ctrl->refcount_non_zero == 3) {
+				DSI_CTRL_ERR(dsi_ctrl, "refcount_non_zero %d\n",
+					dsi_ctrl->refcount_non_zero);
+				SDE_DBG_DUMP(SDE_DBG_BUILT_IN_ALL, "panic");
+			}
+		} else {
+			dsi_ctrl->refcount_non_zero = 0;
+		}
+	}
+
 	if (dsi_ctrl->irq_info.irq_stat_refcount[intr_idx] == 0) {
 		/* enable irq on first request */
 		if (dsi_ctrl->irq_info.irq_stat_mask == 0)
@@ -3458,6 +3472,10 @@ error_disable_gdsc:
 int dsi_ctrl_cmd_transfer(struct dsi_ctrl *dsi_ctrl, struct dsi_cmd_desc *cmd)
 {
 	int rc = 0;
+	int i = 0;
+	u8 *pcmddata = NULL;
+	char dbgcmd[4] = {0};
+	unsigned char *dbgcmds = NULL;
 
 	if (!dsi_ctrl || !cmd) {
 		DSI_CTRL_ERR(dsi_ctrl, "Invalid params\n");
@@ -3472,6 +3490,19 @@ int dsi_ctrl_cmd_transfer(struct dsi_ctrl *dsi_ctrl, struct dsi_cmd_desc *cmd)
 			DSI_CTRL_ERR(dsi_ctrl, "read message failed read length, rc=%d\n",
 					rc);
 	} else {
+	       if (dsi_ctrl->mipi_cmd_log_en) {
+	           dbgcmds = kzalloc(cmd->msg.tx_len * 4 + 1, GFP_KERNEL);
+	           if (dbgcmds) {
+			pcmddata = (u8*)cmd->msg.tx_buf;
+			for (i = 0; i < cmd->msg.tx_len; i++) {
+				snprintf(dbgcmd, 4, " %2x", pcmddata[i]);
+				strcat(dbgcmds, dbgcmd);
+			}
+			printk("%s: dsi_ctrl_cmd_transfer len=%zd, type=0x%x %s cmds=%s\n",
+				   dsi_ctrl->name, cmd->msg.tx_len, cmd->msg.type, (cmd->msg.flags & MIPI_DSI_MSG_USE_LPM) ? "hs" : "lp", dbgcmds);
+			kfree(dbgcmds);
+	           }
+		}
 		rc = dsi_message_tx(dsi_ctrl, cmd);
 		if (rc)
 			DSI_CTRL_ERR(dsi_ctrl, "command msg transfer failed, rc = %d\n",

@@ -98,6 +98,7 @@ static void dp_bridge_pre_enable(struct drm_bridge *drm_bridge)
 		return;
 	}
 
+	DP_INFO("##\n");
 	/* By this point mode should have been validated through mode_fixup */
 	rc = dp->set_mode(dp, bridge->dp_panel, &bridge->dp_mode);
 	if (rc) {
@@ -120,6 +121,7 @@ static void dp_bridge_pre_enable(struct drm_bridge *drm_bridge)
 	if (rc)
 		DP_ERR("[%d] DP display enable failed, rc=%d\n",
 		       bridge->id, rc);
+	DP_INFO("==\n");
 }
 
 static void dp_bridge_enable(struct drm_bridge *drm_bridge)
@@ -146,6 +148,7 @@ static void dp_bridge_enable(struct drm_bridge *drm_bridge)
 
 	dp = bridge->display;
 
+	DP_INFO("call dp_display_post_enable\n");
 	rc = dp->post_enable(dp, bridge->dp_panel);
 	if (rc)
 		DP_ERR("[%d] DP display post enable failed, rc=%d\n",
@@ -181,6 +184,7 @@ static void dp_bridge_disable(struct drm_bridge *drm_bridge)
 		return;
 	}
 
+	DP_INFO("call dp_display_pre_disable\n");
 	if (dp)
 		sde_connector_helper_bridge_disable(bridge->connector);
 
@@ -215,6 +219,7 @@ static void dp_bridge_post_disable(struct drm_bridge *drm_bridge)
 
 	dp = bridge->display;
 
+	DP_INFO("call dp_display_disable\n");
 	rc = dp->disable(dp, bridge->dp_panel);
 	if (rc) {
 		DP_ERR("[%d] DP display disable failed, rc=%d\n",
@@ -595,6 +600,9 @@ int dp_connector_get_modes(struct drm_connector *connector,
 			}
 			m->width_mm = connector->display_info.width_mm;
 			m->height_mm = connector->display_info.height_mm;
+			DP_INFO("add drm_display_mode %ux%u mm %ux%u\n",
+				       drm_mode.hdisplay, drm_mode.vdisplay,
+				       m->width_mm, m->height_mm);
 			drm_mode_probed_add(connector, m);
 		}
 	} else {

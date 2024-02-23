@@ -1448,7 +1448,7 @@ static int dp_link_adjust_levels(struct dp_link *dp_link, u8 *link_status)
 		&& (dp_link->phy_params.v_level == DP_LINK_VOLTAGE_LEVEL_1))
 		dp_link->phy_params.p_level = DP_LINK_PRE_EMPHASIS_LEVEL_2;
 
-	DP_DEBUG("Set (VxPx): 0x%x, 0x%x\n",
+	DP_INFO("Set (VxPx): 0x%x, 0x%x\n",
 		dp_link->phy_params.v_level, dp_link->phy_params.p_level);
 
 	return 0;

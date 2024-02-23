@@ -198,7 +198,7 @@ static void dp_ctrl_wait4video_ready(struct dp_ctrl_private *ctrl)
 	if (!wait_for_completion_timeout(&ctrl->video_comp, HZ / 2))
 		DP_WARN("SEND_VIDEO time out\n");
 	else
-		DP_DEBUG("SEND_VIDEO triggered\n");
+		DP_INFO("SEND_VIDEO triggered\n");
 }
 
 static int dp_ctrl_update_sink_vx_px(struct dp_ctrl_private *ctrl)
@@ -279,7 +279,7 @@ static int dp_ctrl_read_link_status(struct dp_ctrl_private *ctrl,
 			break;
 		}
 
-		if (!(link_status[offset] & DP_LINK_STATUS_UPDATED))
+		if (link_status[offset] & DP_LINK_STATUS_UPDATED)
 			break;
 	}
 
@@ -739,6 +739,31 @@ end:
 	ctrl->training_2_pattern = pattern;
 }
 
+static bool is_allow_downgrade(u8 *monitor_name, int type_index)
+{
+	char *hub_monitor_blacklist[] = {"Y27q-20",NULL};
+	char *dp_monitor_blacklist[] = {"P27h-30","P32p-30","Y27q-20",NULL};
+	bool is_allow = false;
+	char **monitor_list;
+
+	if(type_index == 0)
+		monitor_list = hub_monitor_blacklist;
+	else
+		monitor_list = dp_monitor_blacklist;
+
+	while(*monitor_list != NULL) {
+		DP_INFO("downgrade:value:%s\n", *monitor_list);
+		if(strstr(monitor_name, *monitor_list) != NULL){
+			is_allow = true;
+			DP_INFO("match the monitor name=%s\n", monitor_name);
+			break;
+		}
+		monitor_list++;
+	}
+
+	return is_allow;
+}
+
 static int dp_ctrl_link_setup(struct dp_ctrl_private *ctrl, bool shallow)
 {
 	int rc = -EINVAL;
@@ -746,6 +771,9 @@ static int dp_ctrl_link_setup(struct dp_ctrl_private *ctrl, bool shallow)
 	u32 link_train_max_retries = 100;
 	struct dp_catalog_ctrl *catalog;
 	struct dp_link_params *link_params;
+	struct drm_dp_link *link_info = &ctrl->panel->link_info;
+	int major = (link_info->revision >> 4) & 0x0f;
+	int minor = link_info->revision & 0x0f;
 
 	catalog = ctrl->catalog;
 	link_params = &ctrl->link->link_params;
@@ -753,8 +781,31 @@ static int dp_ctrl_link_setup(struct dp_ctrl_private *ctrl, bool shallow)
 	catalog->phy_lane_cfg(catalog, ctrl->orientation,
 				link_params->lane_count);
 
+	// When there is multiFunc, only 2 lanes can be used by DP, some usb hub can not send video properly.
+	// Just reduce DP capablity to avoid choosing mode with too high resolution and framerate
+	if (ctrl->parser->dp_downgrade && link_params->lane_count == 2 && link_params->bw_code == DP_LINK_BW_8_1) {
+		DP_INFO("dp_ctrl_link_setup downgrade to DP1.2\n");
+		link_params->bw_code = DP_LINK_BW_5_4;
+	}
+
+	// when there is multiFunc, only 2 lanes can be used by DP, some usb hub can not support dp 1.4, only dp 1.2.
+	// In this scene, when connect monitor with high refresh rate, then insert a charging cable into the hub,
+	// the monitor display will go black, so here we just reduce dp clk rate to make monitor display normal.
+	if (ctrl->parser->dp_downgrade && link_params->lane_count == 2 && major == 1 && minor == 2 &&
+		link_params->bw_code == DP_LINK_BW_5_4 && is_allow_downgrade(ctrl->panel->edid_ctrl->monitor_name, 0)) {
+		DP_INFO("use dp_ctrl_link_rate_down_shift method to downgrade!\n");
+		dp_ctrl_link_rate_down_shift(ctrl);
+	}
+
+	if (ctrl->parser->dp_downgrade && link_params->lane_count == 4 &&
+		link_params->bw_code == DP_LINK_BW_8_1 && is_allow_downgrade(ctrl->panel->edid_ctrl->monitor_name, 1)) {
+		DP_INFO("dp_ctrl_link_setup downgrade to DP_LINK_BW_5_4!\n");
+		ctrl->initial_bw_code = DP_LINK_BW_5_4;
+		dp_ctrl_link_rate_down_shift(ctrl);
+	}
+
 	while (1) {
-		DP_DEBUG("bw_code=%d, lane_count=%d\n",
+		DP_INFO("bw_code=%d, lane_count=%d\n",
 			link_params->bw_code, link_params->lane_count);
 
 		rc = dp_ctrl_enable_link_clock(ctrl);
@@ -1004,6 +1055,7 @@ static int dp_ctrl_link_maintenance(struct dp_ctrl *dp_ctrl)
 	if (atomic_read(&ctrl->aborted))
 		goto end;
 
+	DP_INFO("stream_count=%d\n", ctrl->stream_count);
 	ctrl->aux->state |= DP_STATE_LINK_MAINTENANCE_STARTED;
 	ret = dp_ctrl_setup_main_link(ctrl);
 	ctrl->aux->state &= ~DP_STATE_LINK_MAINTENANCE_STARTED;
@@ -1306,12 +1358,11 @@ static int dp_ctrl_stream_on(struct dp_ctrl *dp_ctrl, struct dp_panel *panel)
 	ctrl->stream_count++;
 
 	link_ready = ctrl->catalog->mainlink_ready(ctrl->catalog);
-	DP_DEBUG("mainlink %s\n", link_ready ? "READY" : "NOT READY");
+	DP_INFO("mainlink %s\n", link_ready ? "READY" : "NOT READY");
 
 	/* wait for link training completion before fec config as per spec */
 	dp_ctrl_fec_setup(ctrl);
 	dp_ctrl_dsc_setup(ctrl, panel);
-	panel->sink_crc_enable(panel, true);
 
 	return rc;
 }
@@ -1419,7 +1470,7 @@ static int dp_ctrl_on(struct dp_ctrl *dp_ctrl, bool mst_mode,
 			ctrl->panel->link_info.num_lanes;
 	}
 
-	DP_DEBUG("bw_code=%d, lane_count=%d\n",
+	DP_INFO("bw_code=%d, lane_count=%d\n",
 		ctrl->link->link_params.bw_code,
 		ctrl->link->link_params.lane_count);
 
@@ -1519,30 +1570,6 @@ void dp_ctrl_set_sim_mode(struct dp_ctrl *dp_ctrl, bool en)
 	DP_INFO("sim_mode=%d\n", ctrl->sim_mode);
 }
 
-int dp_ctrl_setup_misr(struct dp_ctrl *dp_ctrl)
-{
-	struct dp_ctrl_private *ctrl;
-
-	if (!dp_ctrl)
-		return -EINVAL;
-
-	ctrl = container_of(dp_ctrl, struct dp_ctrl_private, dp_ctrl);
-
-	return ctrl->catalog->setup_misr(ctrl->catalog);
-}
-
-int dp_ctrl_read_misr(struct dp_ctrl *dp_ctrl, struct dp_misr40_data *data)
-{
-	struct dp_ctrl_private *ctrl;
-
-	if (!dp_ctrl)
-		return -EINVAL;
-
-	ctrl = container_of(dp_ctrl, struct dp_ctrl_private, dp_ctrl);
-
-	return ctrl->catalog->read_misr(ctrl->catalog, data);
-}
-
 struct dp_ctrl *dp_ctrl_get(struct dp_ctrl_in *in)
 {
 	int rc = 0;
@@ -1593,8 +1620,6 @@ struct dp_ctrl *dp_ctrl_get(struct dp_ctrl_in *in)
 	dp_ctrl->stream_pre_off = dp_ctrl_stream_pre_off;
 	dp_ctrl->set_mst_channel_info = dp_ctrl_set_mst_channel_info;
 	dp_ctrl->set_sim_mode = dp_ctrl_set_sim_mode;
-	dp_ctrl->setup_misr = dp_ctrl_setup_misr;
-	dp_ctrl->read_misr = dp_ctrl_read_misr;
 
 	return dp_ctrl;
 error:

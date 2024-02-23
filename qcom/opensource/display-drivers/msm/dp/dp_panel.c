@@ -79,19 +79,19 @@ struct dp_panel_private {
 };
 
 static const struct dp_panel_info fail_safe = {
-	.h_active = 640,
-	.v_active = 480,
-	.h_back_porch = 48,
-	.h_front_porch = 16,
-	.h_sync_width = 96,
+	.h_active = 1920,
+	.v_active = 1080,
+	.h_back_porch = 148,
+	.h_front_porch = 88,
+	.h_sync_width = 44,
 	.h_active_low = 0,
-	.v_back_porch = 33,
-	.v_front_porch = 10,
-	.v_sync_width = 2,
+	.v_back_porch = 36,
+	.v_front_porch = 4,
+	.v_sync_width = 5,
 	.v_active_low = 0,
 	.h_skew = 0,
 	.refresh_rate = 60,
-	.pixel_clk_khz = 25200,
+	.pixel_clk_khz = 148500,
 	.bpp = 24,
 };
 
@@ -1616,7 +1616,7 @@ static int dp_panel_read_dpcd(struct dp_panel *dp_panel, bool multi_func)
 
 	/* check for EXTENDED_RECEIVER_CAPABILITY_FIELD_PRESENT */
 	if (temp & BIT(7)) {
-		DP_DEBUG("using EXTENDED_RECEIVER_CAPABILITY_FIELD\n");
+		DP_INFO("using EXTENDED_RECEIVER_CAPABILITY_FIELD\n");
 		offset = DPRX_EXTENDED_DPCD_FIELD;
 	}
 
@@ -1638,7 +1638,7 @@ static int dp_panel_read_dpcd(struct dp_panel *dp_panel, bool multi_func)
 	rlen = drm_dp_dpcd_read(panel->aux->drm_aux,
 		DPRX_FEATURE_ENUMERATION_LIST, &rx_feature, 1);
 	if (rlen != 1) {
-		DP_DEBUG("failed to read DPRX_FEATURE_ENUMERATION_LIST\n");
+		DP_INFO("failed to read DPRX_FEATURE_ENUMERATION_LIST\n");
 		rx_feature = 0;
 	} else {
 		panel->vsc_supported = !!(rx_feature &
@@ -1648,7 +1648,7 @@ static int dp_panel_read_dpcd(struct dp_panel *dp_panel, bool multi_func)
 		panel->vscext_chaining_supported = !!(rx_feature &
 				VSC_EXT_VESA_SDP_CHAINING_SUPPORTED);
 
-		DP_DEBUG("vsc=%d, vscext=%d, vscext_chaining=%d\n",
+		DP_INFO("vsc=%d, vscext=%d, vscext_chaining=%d\n",
 				panel->vsc_supported, panel->vscext_supported,
 				panel->vscext_chaining_supported);
 	}
@@ -1663,14 +1663,14 @@ static int dp_panel_read_dpcd(struct dp_panel *dp_panel, bool multi_func)
 	link_info->num_lanes = dpcd[DP_MAX_LANE_COUNT] & DP_MAX_LANE_COUNT_MASK;
 
 	if (is_link_rate_valid(panel->dp_panel.link_bw_code)) {
-		DP_DEBUG("debug link bandwidth code: 0x%x\n",
+		DP_INFO("debug link bandwidth code: 0x%x\n",
 				panel->dp_panel.link_bw_code);
 		link_info->rate = drm_dp_bw_code_to_link_rate(
 				panel->dp_panel.link_bw_code);
 	}
 
 	if (is_lane_count_valid(panel->dp_panel.lane_count)) {
-		DP_DEBUG("debug lane count: %d\n", panel->dp_panel.lane_count);
+		DP_INFO("debug lane count: %d\n", panel->dp_panel.lane_count);
 		link_info->num_lanes = panel->dp_panel.lane_count;
 	}
 
@@ -1678,15 +1678,11 @@ static int dp_panel_read_dpcd(struct dp_panel *dp_panel, bool multi_func)
 		link_info->num_lanes = min_t(unsigned int,
 			link_info->num_lanes, 2);
 
-	DP_DEBUG("version:%d.%d, rate:%d, lanes:%d\n", panel->major,
+	DP_INFO("version:%d.%d, rate:%d, lanes:%d\n", panel->major,
 		panel->minor, link_info->rate, link_info->num_lanes);
 
 	if (drm_dp_enhanced_frame_cap(dpcd))
 		link_info->capabilities |= DP_LINK_CAP_ENHANCED_FRAMING;
-
-	rlen = drm_dp_dpcd_read(panel->aux->drm_aux, DP_TEST_SINK_MISC, &temp, 1);
-	if ((rlen == 1) && (temp & DP_TEST_CRC_SUPPORTED))
-		link_info->capabilities |= DP_LINK_CAP_CRC;
 
 	dfp_count = dpcd[DP_DOWN_STREAM_PORT_COUNT] &
 						DP_DOWN_STREAM_PORT_COUNT;
@@ -1724,7 +1720,7 @@ static int dp_panel_set_default_link_params(struct dp_panel *dp_panel)
 	link_info = &dp_panel->link_info;
 	link_info->rate = default_bw_code;
 	link_info->num_lanes = default_num_lanes;
-	DP_DEBUG("link_rate=%d num_lanes=%d\n",
+	DP_INFO("link_rate=%d num_lanes=%d\n",
 		link_info->rate, link_info->num_lanes);
 
 	return 0;
@@ -3059,70 +3055,6 @@ static void dp_panel_update_pps(struct dp_panel *dp_panel, char *pps_cmd)
 	catalog->pps_flush(catalog);
 }
 
-int dp_panel_get_src_crc(struct dp_panel *dp_panel, u16 *crc)
-{
-	struct dp_catalog_panel *catalog;
-	struct dp_panel_private *panel;
-
-	panel = container_of(dp_panel, struct dp_panel_private, dp_panel);
-
-	catalog = panel->catalog;
-	return catalog->get_src_crc(catalog, crc);
-}
-
-int dp_panel_get_sink_crc(struct dp_panel *dp_panel, u16 *crc)
-{
-	int rc = 0;
-	struct dp_panel_private *panel;
-	struct drm_dp_aux *drm_aux;
-	u8 crc_bytes[6];
-
-	panel = container_of(dp_panel, struct dp_panel_private, dp_panel);
-	drm_aux = panel->aux->drm_aux;
-
-	/*
-	 * At DP_TEST_CRC_R_CR, there's 6 bytes containing CRC data, 2 bytes
-	 * per component (RGB or CrYCb).
-	 */
-	rc = drm_dp_dpcd_read(drm_aux, DP_TEST_CRC_R_CR, crc_bytes, 6);
-	if (rc < 0)
-		return rc;
-
-	rc = 0;
-	crc[0] = crc_bytes[0] | crc_bytes[1] << 8;
-	crc[1] = crc_bytes[2] | crc_bytes[3] << 8;
-	crc[2] = crc_bytes[4] | crc_bytes[5] << 8;
-
-	return rc;
-}
-
-int dp_panel_sink_crc_enable(struct dp_panel *dp_panel, bool enable)
-{
-	int rc = 0;
-	struct dp_panel_private *panel;
-	struct drm_dp_aux *drm_aux;
-	ssize_t ret;
-	u8 buf;
-
-	panel = container_of(dp_panel, struct dp_panel_private, dp_panel);
-	drm_aux = panel->aux->drm_aux;
-
-	if (dp_panel->link_info.capabilities & DP_LINK_CAP_CRC) {
-		ret = drm_dp_dpcd_readb(drm_aux, DP_TEST_SINK, &buf);
-		if (ret < 0)
-			return ret;
-
-		ret = drm_dp_dpcd_writeb(drm_aux, DP_TEST_SINK, buf | DP_TEST_SINK_START);
-		if (ret < 0)
-			return ret;
-
-		drm_dp_dpcd_readb(drm_aux, DP_TEST_SINK, &buf);
-		DP_DEBUG("Enabled CRC: %x\n", buf);
-	}
-
-	return rc;
-}
-
 struct dp_panel *dp_panel_get(struct dp_panel_in *in)
 {
 	int rc = 0;
@@ -3195,9 +3127,6 @@ struct dp_panel *dp_panel_get(struct dp_panel_in *in)
 	dp_panel->read_mst_cap = dp_panel_read_mst_cap;
 	dp_panel->convert_to_dp_mode = dp_panel_convert_to_dp_mode;
 	dp_panel->update_pps = dp_panel_update_pps;
-	dp_panel->get_src_crc = dp_panel_get_src_crc;
-	dp_panel->get_sink_crc = dp_panel_get_sink_crc;
-	dp_panel->sink_crc_enable = dp_panel_sink_crc_enable;
 
 	sde_conn = to_sde_connector(dp_panel->connector);
 	sde_conn->drv_panel = dp_panel;

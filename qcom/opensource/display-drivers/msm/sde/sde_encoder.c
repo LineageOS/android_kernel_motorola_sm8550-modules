@@ -3764,6 +3764,9 @@ static void sde_encoder_underrun_callback(struct drm_encoder *drm_enc,
 		sde_enc->cur_master->ops.get_underrun_line_count(
 				sde_enc->cur_master);
 
+	pr_warn("Underrun detected count:%d",
+                atomic_read(&phy_enc->underrun_cnt));
+
 	trace_sde_encoder_underrun(DRMID(drm_enc),
 		atomic_read(&phy_enc->underrun_cnt));
 
