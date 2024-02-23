@@ -77,6 +77,15 @@ enum cam_ois_packet_opcodes {
 	CAM_OIS_PACKET_OPCODE_INIT,
 	CAM_OIS_PACKET_OPCODE_OIS_CONTROL,
 	CAM_OIS_PACKET_OPCODE_READ,
+#ifdef CONFIG_MOT_OIS_EARLY_UPGRADE_FW
+	CAM_OIS_PACKET_OPCODE_OIS_FW_UPGRADE,
+#endif
+#ifdef CONFIG_MOT_OIS_AF_DRIFT
+	CAM_OIS_PACKET_OPCODE_AF_DRIFT,
+#endif
+#ifdef CONFIG_MOT_OIS_AFTER_SALES_SERVICE
+	CAM_OIS_PACKET_OPCODE_OIS_GYRO_OFFSET,
+#endif
 	CAM_OIS_PACKET_OPCODE_WRITE_TIME
 };
 
@@ -379,7 +388,17 @@ struct cam_cmd_ois_info {
 	__u8                  i2c_freq_mode;
 	__u8                  cmd_type;
 	__u8                  ois_fw_flag;
+#ifdef CONFIG_MOT_OIS_EARLY_UPGRADE_FW
+	__u8                  ois_early_fw_flag;
+#endif
 	__u8                  is_ois_calib;
+	__u8                  ois_preprog_flag;
+	__u8                  ois_precoeff_flag;
+	__u8                  ois_postcalib_flag;
+	__u8                  ois_fw_txn_data_sz;
+	__u8                  ois_fw_inc_addr;
+	__u8                  ois_fw_addr_type;
+	__u8                  ois_fw_data_type;
 	char                  ois_name[MAX_OIS_NAME_SIZE];
 	struct cam_ois_opcode opcode;
 } __attribute__((packed));
@@ -440,6 +459,16 @@ struct cam_cmd_probe_v2 {
 	__u32    logical_camera_id;
 	char     sensor_name[CAM_SENSOR_NAME_MAX_SIZE];
 	__u32    reserved[4];
+#ifdef CONFIG_CCI_ADDR_SWITCH
+	/* add i2c addr switch support*/
+	__u8     i2c_addr_switch;
+	__u32    second_i2c_address;
+	__u8     i2c_switch_reg_addr_Type;
+	__u8     i2c_switch_reg_data_Type;
+	__u32    i2c_switch_reg_addr;
+	__u32    i2c_switch_reg_data;
+	__u32    i2c_switch_reg_delayMs;
+#endif
 } __attribute__((packed));
 
 /**

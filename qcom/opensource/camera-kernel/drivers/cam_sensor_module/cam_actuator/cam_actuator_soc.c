@@ -43,6 +43,24 @@ int32_t cam_actuator_parse_dt(struct cam_actuator_ctrl_t *a_ctrl,
 
 	CAM_DBG(CAM_SENSOR, "I3C Target: %s", CAM_BOOL_TO_YESNO(a_ctrl->is_i3c_device));
 
+#ifdef CONFIG_MOT_DONGWOON_OIS_AF_DRIFT
+	if (!of_property_read_bool(of_node, "af-drift-support")) {
+		a_ctrl->af_drift_supported = false;
+	} else {
+		a_ctrl->af_drift_supported = true;
+	}
+	CAM_DBG(CAM_ACTUATOR, "af-drift-support %d", a_ctrl->af_drift_supported);
+#endif
+
+#if defined(CONFIG_MOT_OIS_SEM1217S_DRIVER) || defined(CONFIG_MOT_OIS_DW9784_DRIVER)
+	if (!of_property_read_bool(of_node, "af-ois-use-same-ic")) {
+		a_ctrl->af_ois_use_same_ic = false;
+	} else {
+		a_ctrl->af_ois_use_same_ic = true;
+	}
+	CAM_DBG(CAM_ACTUATOR, "af_ois_use_same_ic %d", a_ctrl->af_ois_use_same_ic);
+#endif
+
 	if (a_ctrl->io_master_info.master_type == CCI_MASTER) {
 		rc = of_property_read_u32(of_node, "cci-master",
 			&(a_ctrl->cci_i2c_master));

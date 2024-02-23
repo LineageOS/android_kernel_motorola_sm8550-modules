@@ -466,6 +466,9 @@ struct csiphy_device {
 	bool                                     skip_aux_settings;
 	bool                                     domain_id_security;
 	uint16_t                                 preamble_enable;
+#ifdef CONFIG_CAM_CSI_CONDITIONAL_AUX
+	bool                           aux_setting_allowed;
+#endif
 };
 
 /**

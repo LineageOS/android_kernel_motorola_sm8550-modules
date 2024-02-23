@@ -1,3 +1,4 @@
+ifneq ($(BOARD_USES_LEGACY_CAMERA), true)
 # Build camera kernel driver
 CAMERA_DLKM_ENABLED := true
 ifeq ($(TARGET_KERNEL_DLKM_DISABLE), true)
@@ -13,3 +14,4 @@ BOARD_VENDOR_KERNEL_MODULES += $(KERNEL_MODULES_OUT)/camera.ko
 endif
 endif
 endif
+endif # !BOARD_USES_LEGACY_CAMERA

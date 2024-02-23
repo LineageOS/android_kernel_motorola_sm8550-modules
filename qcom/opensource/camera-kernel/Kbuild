@@ -46,6 +46,28 @@ ifeq ($(CONFIG_ARCH_PARROT), y)
 include $(CAMERA_KERNEL_ROOT)/config/parrot.mk
 endif
 
+ifneq (,$(filter hiphid hiphic hiphi hiphid_factory hiphic_factory hiphi_factory, $(TARGET_PRODUCT)))
+include $(CAMERA_KERNEL_ROOT)/config/hiphi.mk
+else ifneq (,$(filter li li_factory, $(TARGET_PRODUCT)))
+include $(CAMERA_KERNEL_ROOT)/config/li.mk
+else ifneq (,$(filter oneli oneli_factory, $(TARGET_PRODUCT)))
+include $(CAMERA_KERNEL_ROOT)/config/oneli.mk
+else ifneq (,$(filter eqs eqs_factory, $(TARGET_PRODUCT)))
+include $(CAMERA_KERNEL_ROOT)/config/eqs.mk
+else ifneq (,$(filter rtwo, $(TARGET_PRODUCT)))
+include $(CAMERA_KERNEL_ROOT)/config/rtwo.mk
+else ifneq (,$(filter rtwo_factory, $(TARGET_PRODUCT)))
+include $(CAMERA_KERNEL_ROOT)/config/rtwo_factory.mk
+else ifneq (,$(filter ctwo, $(TARGET_PRODUCT)))
+include $(CAMERA_KERNEL_ROOT)/config/ctwo.mk
+else ifneq (,$(filter ctwo_factory, $(TARGET_PRODUCT)))
+include $(CAMERA_KERNEL_ROOT)/config/ctwo_factory.mk
+else ifneq (,$(filter eqe, $(TARGET_PRODUCT)))
+include $(CAMERA_KERNEL_ROOT)/config/eqe.mk
+else ifneq (,$(filter eqe_factory, $(TARGET_PRODUCT)))
+include $(CAMERA_KERNEL_ROOT)/config/eqe_factory.mk
+endif
+
 # For some targets which have binary compatible gki kernel with another one,
 # we cannot rely on CONFIG_ARCH_* symbol which is defined in Kernel defconfig
 ifeq ($(BOARD_PLATFORM), kalama)
@@ -231,6 +253,8 @@ camera-$(CONFIG_SPECTRA_SENSOR) += \
 	drivers/cam_sensor_module/cam_eeprom/cam_eeprom_soc.o \
 	drivers/cam_sensor_module/cam_ois/cam_ois_dev.o \
 	drivers/cam_sensor_module/cam_ois/cam_ois_core.o \
+	drivers/cam_sensor_module/cam_ois/cam_ois_dw9781.o \
+	drivers/cam_sensor_module/cam_ois/cam_ois_dw9784.o \
 	drivers/cam_sensor_module/cam_ois/cam_ois_soc.o \
 	drivers/cam_sensor_module/cam_sensor/cam_sensor_dev.o \
 	drivers/cam_sensor_module/cam_sensor/cam_sensor_core.o \
@@ -245,6 +269,10 @@ camera-$(CONFIG_SPECTRA_SENSOR) += \
 	drivers/cam_sensor_module/cam_flash/cam_flash_dev.o \
 	drivers/cam_sensor_module/cam_flash/cam_flash_core.o \
 	drivers/cam_sensor_module/cam_flash/cam_flash_soc.o
+
+camera-$(CONFIG_MOT_OIS_SEM1217S_DRIVER) += drivers/cam_sensor_module/cam_ois/cam_ois_sem1217s.o
+
+camera-$(CONFIG_CCI_DEBUG_INTF) += drivers/cam_sensor_module/cam_cci/cci_intf.o
 
 camera-$(CONFIG_SPECTRA_CUSTOM) += \
 	drivers/cam_cust/cam_custom_hw_mgr/cam_custom_hw1/cam_custom_sub_mod_soc.o \
