@@ -1,3 +1,4 @@
+ZRAM_SRC := zram-5.15
 EXTRA_CFLAGS += -DCONFIG_ZRAM_5_15
 
 # add -Wall to try to catch everything we can.
