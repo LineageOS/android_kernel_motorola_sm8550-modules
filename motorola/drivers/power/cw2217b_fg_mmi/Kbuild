@@ -1,7 +1,7 @@
 # add -Wall to try to catch everything we can.
 EXTRA_CFLAGS += -Wall
-EXTRA_CFLAGS += -I$(ANDROID_BUILD_TOP)/motorola/kernel/modules/include
-EXTRA_CFLAGS += -I$(ANDROID_BUILD_TOP)/motorola/kernel/drivers/power/cw2217b_fg_mmi
+EXTRA_CFLAGS += -I$(KERNEL_SRC)/../sm8550-modules/motorola/include
+EXTRA_CFLAGS += -I$(KERNEL_SRC)/../sm8550-modules/motorola/drivers/power/cw2217b_fg_mmi
 
 ifneq ($(filter m y,$(CONFIG_DYNAMIC_UPDATE_UI_FULL)),)
 	EXTRA_CFLAGS += -DDYNAMIC_UPDATE_UI_FULL

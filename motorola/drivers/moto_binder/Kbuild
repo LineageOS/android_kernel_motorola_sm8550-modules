@@ -4,9 +4,9 @@ endif
 
 # add -Wall to try to catch everything we can.
 EXTRA_CFLAGS += -Wall
-EXTRA_CFLAGS += -I$(ANDROID_BUILD_TOP)/motorola/kernel/modules/include
+EXTRA_CFLAGS += -I$(KERNEL_SRC)/../sm8550-modules/motorola/include
 EXTRA_CFLAGS += -I$(ANDROID_BUILD_TOP)/kernel_platform/common
-EXTRA_CFLAGS += -I$(ANDROID_BUILD_TOP)/motorola/kernel/modules/drivers/moto_binder
+EXTRA_CFLAGS += -I$(KERNEL_SRC)/../sm8550-modules/motorola/drivers/moto_binder
 
 
 obj-m += moto_binder.o

@@ -1,8 +1,8 @@
 # add -Wall to try to catch everything we can.
 EXTRA_CFLAGS += -Wall
-EXTRA_CFLAGS += -I$(ANDROID_BUILD_TOP)/motorola/kernel/modules/include \
-		-I$(ANDROID_BUILD_TOP)/motorola/kernel/modules/drivers/power/sgm4154x_charger_lite \
-		-I$(ANDROID_BUILD_TOP)/motorola/kernel/modules/drivers/power/mmi_charger
+EXTRA_CFLAGS += -I$(KERNEL_SRC)/../sm8550-modules/motorola/include \
+		-I$(KERNEL_SRC)/../sm8550-modules/motorola/drivers/power/sgm4154x_charger_lite \
+		-I$(KERNEL_SRC)/../sm8550-modules/motorola/drivers/power/mmi_charger
 
 ifeq ($(CONFIG_SGM4154X_CHARGER_NAME),)
 	EXTRA_CFLAGS += -D__SGM41516D_CHIP_ID__

@@ -3,7 +3,7 @@ KERNEL_DIR_PATH = $(shell find $(TOP)/kernel/ -name "msm-*" | head -1 | grep -i 
 
 KERNEL_VERSION_NAME = $(shell basename $(KERNEL_DIR_PATH))
 EXTRA_CFLAGS += -Wall
-EXTRA_CFLAGS += -I$(TOP)/motorola/kernel/modules/include
+EXTRA_CFLAGS += -I$(KERNEL_SRC)/../sm8550-modules/motorola/include
 
 ifneq (,$(KERNEL_DIR_PATH))
         EXTRA_CFLAGS += -I$(TOP)/kernel/$(KERNEL_VERSION_NAME)/drivers/base

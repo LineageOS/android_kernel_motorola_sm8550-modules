@@ -1,7 +1,7 @@
 # add -Wall to try to catch everything we can.
 EXTRA_CFLAGS += -Wall
-EXTRA_CFLAGS += -I$(ANDROID_BUILD_TOP)/motorola/kernel/modules/include \
-		-I$(ANDROID_BUILD_TOP)/motorola/kernel/modules/drivers/usb/typec/mmi_tcpc
+EXTRA_CFLAGS += -I$(KERNEL_SRC)/../sm8550-modules/motorola/include \
+		-I$(KERNEL_SRC)/../sm8550-modules/motorola/drivers/usb/typec/mmi_tcpc
 
 subdir-ccflags-y += -Wall -Werror -DCONFIG_RT_REGMAP
 

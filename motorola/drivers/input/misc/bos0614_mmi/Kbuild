@@ -1,9 +1,9 @@
 # add -Wall to try to catch everything we can.
 EXTRA_CFLAGS += -Wall
-EXTRA_CFLAGS += -I$(ANDROID_BUILD_TOP)/motorola/kernel/modules/include \
-	-I$(ANDROID_BUILD_TOP)/motorola/kernel/modules/drivers/input/misc/bos0614_mmi \
-	-I$(ANDROID_BUILD_TOP)/motorola/kernel/modules/drivers/input/misc/bos0614_mmi/libs/dk-core/src \
-	-I$(ANDROID_BUILD_TOP)/motorola/kernel/modules/drivers/input/misc/bos0614_mmi/libs/dk-core
+EXTRA_CFLAGS += -I$(KERNEL_SRC)/../sm8550-modules/motorola/include \
+	-I$(KERNEL_SRC)/../sm8550-modules/motorola/drivers/input/misc/bos0614_mmi \
+	-I$(KERNEL_SRC)/../sm8550-modules/motorola/drivers/input/misc/bos0614_mmi/libs/dk-core/src \
+	-I$(KERNEL_SRC)/../sm8550-modules/motorola/drivers/input/misc/bos0614_mmi/libs/dk-core
 
 EXTRA_CFLAGS += -DMOTOROLA
 EXTRA_CFLAGS += -DLITTLE_ENDIAN=1234 -DBYTE_ORDER=LITTLE_ENDIAN

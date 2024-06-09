@@ -1,7 +1,7 @@
 # add -Wall to try to catch everything we can.
 EXTRA_CFLAGS += -Wall
-EXTRA_CFLAGS += -I$(ANDROID_BUILD_TOP)/motorola/kernel/modules/include \
-		-I$(ANDROID_BUILD_TOP)/motorola/kernel/modules/drivers/input/touchscreen/synaptics_mmi_class
+EXTRA_CFLAGS += -I$(KERNEL_SRC)/../sm8550-modules/motorola/include \
+		-I$(KERNEL_SRC)/../sm8550-modules/motorola/drivers/input/touchscreen/synaptics_mmi_class
 
 ifneq ($(filter banks%, $(TARGET_PRODUCT)),)
     EXTRA_CFLAGS += -DSOFTDEP_GPIO_PCAL6408

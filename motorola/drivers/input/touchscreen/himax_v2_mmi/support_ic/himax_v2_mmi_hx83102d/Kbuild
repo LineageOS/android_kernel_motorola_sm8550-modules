@@ -1,6 +1,6 @@
 # add -Wall to try to catch everything we can.
 EXTRA_CFLAGS += -Wall
-EXTRA_CFLAGS += -I$(TOP)/motorola/kernel/modules/include \
+EXTRA_CFLAGS += -I$(KERNEL_SRC)/../sm8550-modules/motorola/include \
 		-I$(TOP)/motorola/kernel/modules/drivers/input/touchscreen/himax_v2_mmi \
 		-I$(TOP)/motorola/kernel/modules/drivers/input/touchscreen/himax_v2_mmi/support_ic \
 		-I$(TOP)/motorola/kernel/modules/drivers/input/touchscreen/himax_v2_mmi/support_ic/himax_v2_mmi_hx83102d

@@ -1,7 +1,7 @@
 # add -Wall to try to catch everything we canss
 # EXTRA_CFLAGS += -Wallss
-EXTRA_CFLAGS += -I$(ANDROID_BUILD_TOP)/motorola/kernel/modules/include \
-		-I$(ANDROID_BUILD_TOP)/motorola/kernel/modules/drivers/input/touchscreen/stmicro_mmi
+EXTRA_CFLAGS += -I$(KERNEL_SRC)/../sm8550-modules/motorola/include \
+		-I$(KERNEL_SRC)/../sm8550-modules/motorola/drivers/input/touchscreen/stmicro_mmi
 
 obj-m := stmicro_mmi.o
 stmicro_mmi-objs := fts.o fts_proc.o

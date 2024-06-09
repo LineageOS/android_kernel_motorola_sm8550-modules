@@ -3,7 +3,7 @@
 #
 
 EXTRA_CFLAGS += -Wall
-EXTRA_CFLAGS += -I$(TOP)/motorola/kernel/modules/include
+EXTRA_CFLAGS += -I$(KERNEL_SRC)/../sm8550-modules/motorola/include
 
 obj-m += stmvl53l5.o
 stmvl53l5-objs := stmvl53l5_module.o stmvl53l5_i2c.o stmvl53l5_spi.o stmvl53l5_load_fw.o

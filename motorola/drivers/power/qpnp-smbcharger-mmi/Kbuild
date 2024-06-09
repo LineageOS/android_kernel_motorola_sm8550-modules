@@ -1,6 +1,6 @@
 # add -Wall to try to catch everything we can.
 EXTRA_CFLAGS += -Wall
-EXTRA_CFLAGS += -I$(TOP)/motorola/kernel/modules/include
+EXTRA_CFLAGS += -I$(KERNEL_SRC)/../sm8550-modules/motorola/include
 
 ifneq ($(filter m y,$(CONFIG_PD_CHARGER_MMI)),)
 	EXTRA_CFLAGS += -DCONFIG_PD_CHARGER_MMI

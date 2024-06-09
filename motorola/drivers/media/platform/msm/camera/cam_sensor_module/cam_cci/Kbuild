@@ -23,7 +23,7 @@ else
 endif
 
 EXTRA_CFLAGS += -Wall
-EXTRA_CFLAGS += -I$(ANDROID_BUILD_TOP)/motorola/kernel/modules/include
+EXTRA_CFLAGS += -I$(KERNEL_SRC)/../sm8550-modules/motorola/include
 EXTRA_CFLAGS += -I$(KERNEL_CAMERA_DRIVER_PATH)/cam_utils
 EXTRA_CFLAGS += -I$(KERNEL_CAMERA_DRIVER_PATH)/cam_cpas/include
 EXTRA_CFLAGS += -I$(KERNEL_CAMERA_DRIVER_PATH)/cam_sensor_module/cam_sensor_io

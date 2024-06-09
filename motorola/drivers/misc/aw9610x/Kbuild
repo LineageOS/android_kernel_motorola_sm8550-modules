@@ -6,7 +6,7 @@ KERNEL_PLATFORM_PATH = $(shell find $(ANDROID_BUILD_TOP) -maxdepth 1 -name "kern
 
 # add -Wall to try to catch everything we can.
 EXTRA_CFLAGS += -Wall
-EXTRA_CFLAGS += -I$(ANDROID_BUILD_TOP)/motorola/kernel/modules/include
+EXTRA_CFLAGS += -I$(KERNEL_SRC)/../sm8550-modules/motorola/include
 
 ifneq ($(filter m y,$(CONFIG_AW9610X_POWER_SUPPLY_ONLINE)),)
 	EXTRA_CFLAGS += -DCONFIG_USE_POWER_SUPPLY_ONLINE
