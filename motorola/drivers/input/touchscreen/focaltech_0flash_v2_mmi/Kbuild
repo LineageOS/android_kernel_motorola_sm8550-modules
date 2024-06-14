@@ -47,4 +47,4 @@ ifneq ($(filter m y,$(CONFIG_FOCALTECH_LAST_TIME)),)
 	EXTRA_CFLAGS += -DFTS_LAST_TIME_EN
 endif
 
-KBUILD_EXTRA_SYMBOLS += $(CURDIR)/../../kernel/msm-$(MODULE_KERNEL_VERSION)/Module.symvers
+KBUILD_EXTRA_SYMBOLS += $(OUT_DIR)/Module.symvers
