@@ -1037,6 +1037,9 @@ static int brl_esd_check(struct goodix_ts_core *cd)
 #define GOODIX_GESTURE_EVENT		0x20
 #define POINT_TYPE_STYLUS_HOVER		0x01
 #define POINT_TYPE_STYLUS			0x03
+#ifdef CONFIG_MOTO_DDA_PASSIVESTYLUS
+#define POINT_TYPE_PALM			0x04
+#endif
 #define GOODIX_PALM_FLAG			0x10
 
 static void goodix_parse_finger(struct goodix_touch_data *touch_data,
@@ -1054,6 +1057,12 @@ static void goodix_parse_finger(struct goodix_touch_data *touch_data,
 			touch_data->touch_num = 0;
 			return;
 		}
+#ifdef CONFIG_MOTO_DDA_PASSIVESTYLUS
+		if ((coor_data[0] & 0x0F) == POINT_TYPE_PALM)
+			touch_data->coords[id].plam_status = true;
+		else
+			touch_data->coords[id].plam_status = false;
+#endif
 		x = le16_to_cpup((__le16 *)(coor_data + 2));
 		y = le16_to_cpup((__le16 *)(coor_data + 4));
 		w = le16_to_cpup((__le16 *)(coor_data + 6));
@@ -1470,10 +1479,8 @@ static int brl_event_handler(struct goodix_ts_core *cd,
 		ts_event->event_type = EVENT_GESTURE;
 		ts_event->gesture_report_info = pre_buf[2];
 		ts_event->gesture_type = pre_buf[4];
-#ifdef CONFIG_GTP_FOD
 		memcpy(ts_event->gesture_data, &pre_buf[8],
 				GOODIX_GESTURE_DATA_LEN);
-#endif
 	} else {
 		ts_info("Unsupported event status");
 		return -EINVAL;
@@ -1497,7 +1504,6 @@ static int brld_get_framedata(struct goodix_ts_core *cd,
 	int ret;
 	unsigned char val;
 	int retry = 20;
-	struct frame_head *frame_head;
 	unsigned char frame_buf[GOODIX_MAX_FRAMEDATA_LEN];
 	unsigned char *cur_ptr;
 	unsigned int flag_addr = cd->ic_info.misc.frame_data_addr;
@@ -1532,11 +1538,6 @@ static int brld_get_framedata(struct goodix_ts_core *cd,
 		return -EINVAL;
 	}
 
-	frame_head = (struct frame_head *)frame_buf;
-	if (checksum_cmp(frame_buf, frame_head->cur_frame_len, CHECKSUM_MODE_U16_LE)) {
-		ts_err("frame body checksum error");
-		return -EINVAL;
-	}
 	cur_ptr = frame_buf;
 	cur_ptr += cd->ic_info.misc.frame_data_head_len;
 	cur_ptr += cd->ic_info.misc.fw_attr_len;
