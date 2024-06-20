@@ -1497,7 +1497,6 @@ static int brld_get_framedata(struct goodix_ts_core *cd,
 	int ret;
 	unsigned char val;
 	int retry = 20;
-	struct frame_head *frame_head;
 	unsigned char frame_buf[GOODIX_MAX_FRAMEDATA_LEN];
 	unsigned char *cur_ptr;
 	unsigned int flag_addr = cd->ic_info.misc.frame_data_addr;
@@ -1532,11 +1531,6 @@ static int brld_get_framedata(struct goodix_ts_core *cd,
 		return -EINVAL;
 	}
 
-	frame_head = (struct frame_head *)frame_buf;
-	if (checksum_cmp(frame_buf, frame_head->cur_frame_len, CHECKSUM_MODE_U16_LE)) {
-		ts_err("frame body checksum error");
-		return -EINVAL;
-	}
 	cur_ptr = frame_buf;
 	cur_ptr += cd->ic_info.misc.frame_data_head_len;
 	cur_ptr += cd->ic_info.misc.fw_attr_len;
