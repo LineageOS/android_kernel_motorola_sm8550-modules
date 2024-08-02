@@ -408,6 +408,26 @@ static ssize_t gesture_store(struct device *dev,
 }
 static DEVICE_ATTR(gesture, (S_IWUSR | S_IWGRP | S_IRUGO), gesture_show, gesture_store);
 
+static ssize_t single_tap_enabled_show(struct device *dev,
+				       struct device_attribute *attr, char *buf)
+{
+	struct ts_mmi_dev *touch_cdev = dev_get_drvdata(dev);
+
+	return snprintf(buf, PAGE_SIZE, "%u\n",
+			!!(touch_cdev->gesture_mode_type & TS_MMI_GESTURE_SINGLE));
+}
+static ssize_t single_tap_enabled_store(struct device *dev,
+					struct device_attribute *attr,
+					const char *buf, size_t count)
+{
+	struct ts_mmi_dev *touch_cdev = dev_get_drvdata(dev);
+
+	gesture_set(touch_cdev, TS_MMI_GESTURE_SINGLE, buf[0] != '0');
+
+	return count;
+}
+static DEVICE_ATTR_RW(single_tap_enabled);
+
 static ssize_t double_tap_enabled_show(struct device *dev,
 				       struct device_attribute *attr, char *buf)
 {
@@ -551,6 +571,7 @@ static struct attribute *sysfs_class_attrs[] = {
 #endif
 #ifdef CONFIG_BOARD_USES_DOUBLE_TAP_CTRL
 	&dev_attr_gesture.attr,
+	&dev_attr_single_tap_enabled.attr,
 	&dev_attr_double_tap_enabled.attr,
 	&dev_attr_double_tap_pressed.attr,
 	&dev_attr_udfps_enabled.attr,
