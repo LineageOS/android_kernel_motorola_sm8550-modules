@@ -209,7 +209,8 @@ static inline void update_poison_center(struct touch_event_data *tev)
 }
 #endif /* TS_MMI_TOUCH_GESTURE_POISON_EVENT */
 
-static int ts_mmi_gesture_handler(struct gesture_event_data *gev)
+static int _ts_mmi_gesture_handler(struct gesture_event_data *gev,
+				   struct input_dev *input_dev)
 {
 	int key_code;
 	struct ts_mmi_dev *touch_cdev = sensor_pdata->touch_cdev;
@@ -265,7 +266,25 @@ static int ts_mmi_gesture_handler(struct gesture_event_data *gev)
 	input_report_key(sensor_pdata->input_sensor_dev, key_code, 0);
 	input_sync(sensor_pdata->input_sensor_dev);
 
+	if (input_dev) {
+		input_report_key(input_dev, key_code, 1);
+		input_sync(input_dev);
+		input_report_key(input_dev, key_code, 0);
+		input_sync(input_dev);
+	}
+
 	return 0;
+}
+
+static int ts_mmi_gesture_handler(struct gesture_event_data *gev)
+{
+	return _ts_mmi_gesture_handler(gev, NULL);
+}
+
+static int ts_mmi_gesture_handler_self(struct gesture_event_data *gev,
+				       struct input_dev *input_dev)
+{
+	return _ts_mmi_gesture_handler(gev, input_dev);
 }
 
 static int ts_mmi_cli_gesture_handler(struct gesture_event_data *gev)
@@ -609,6 +628,7 @@ int ts_mmi_gesture_init(struct ts_mmi_dev *touch_cdev)
 
 	/* export report gesture function to vendor */
 	touch_cdev->mdata->exports.report_gesture = ts_mmi_gesture_handler;
+	touch_cdev->mdata->exports.report_gesture_self = ts_mmi_gesture_handler_self;
 	/* export report touch event function to vendor */
 	touch_cdev->mdata->exports.report_touch_event = ts_mmi_touch_event_handler;
 

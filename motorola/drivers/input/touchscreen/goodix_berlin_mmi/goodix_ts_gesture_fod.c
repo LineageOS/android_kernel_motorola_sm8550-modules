@@ -413,14 +413,14 @@ static int gsx_gesture_ist(struct goodix_ts_core *cd,
 	}
 
 	mmi_event.evcode =0;
-	if ( cd->imports && cd->imports->report_gesture) {
+	if ( cd->imports && cd->imports->report_gesture_self) {
 		if(cd->gesture_type & GESTURE_SINGLE_TAP && gs_event.gesture_type == GOODIX_GESTURE_SINGLE_TAP) {
 			ts_info("get SINGLE-TAP gesture");
 			mmi_event.evcode =1;
 			fod_down = 0;
 
 			/* call class method */
-			ret = cd->imports->report_gesture(&mmi_event);
+			ret = cd->imports->report_gesture_self(&mmi_event, cd->input_dev);
 			if (!ret)
 				PM_WAKEUP_EVENT(cd->gesture_wakelock, 3000);
 			goto gesture_ist_exit;
@@ -430,7 +430,7 @@ static int gsx_gesture_ist(struct goodix_ts_core *cd,
 			fod_down = 0;
 
 			/* call class method */
-			ret = cd->imports->report_gesture(&mmi_event);
+			ret = cd->imports->report_gesture_self(&mmi_event, cd->input_dev);
 			if (!ret)
 				PM_WAKEUP_EVENT(cd->gesture_wakelock, 3000);
 			goto gesture_ist_exit;
@@ -453,7 +453,7 @@ static int gsx_gesture_ist(struct goodix_ts_core *cd,
 			start = jiffies;
 			//maximum allow send down event 7 times
 			if(fod_down < 6) {
-				ret = cd->imports->report_gesture(&mmi_event);
+				ret = cd->imports->report_gesture_self(&mmi_event, cd->input_dev);
 				if (!ret)
 					PM_WAKEUP_EVENT(cd->gesture_wakelock, 3000);
 			}
@@ -463,7 +463,7 @@ static int gsx_gesture_ist(struct goodix_ts_core *cd,
 			mmi_event.evcode = 3;
 			mmi_event.evdata.x= 0;
 			mmi_event.evdata.y= 0;
-			ret = cd->imports->report_gesture(&mmi_event);
+			ret = cd->imports->report_gesture_self(&mmi_event, cd->input_dev);
 			if (!ret)
 				PM_WAKEUP_EVENT(cd->gesture_wakelock, 500);
 			fod_down = 0;

@@ -287,6 +287,7 @@ struct touch_clip_area {
  */
 struct ts_mmi_class_methods {
 	int     (*report_gesture)(struct gesture_event_data *gev);
+	int     (*report_gesture_self)(struct gesture_event_data *gev, struct input_dev *input_dev);
 	int     (*get_gesture_type)(struct device *dev, unsigned char *gesture_type);
 	int     (*report_palm)(bool value);
 	int     (*get_class_fname)(struct device *dev , const char **fname);
