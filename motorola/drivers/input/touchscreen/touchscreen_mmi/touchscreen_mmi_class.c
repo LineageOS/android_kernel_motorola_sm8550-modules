@@ -574,15 +574,25 @@ static struct attribute *sysfs_class_attrs[] = {
 	&dev_attr_single_tap_enabled.attr,
 	&dev_attr_double_tap_enabled.attr,
 	&dev_attr_double_tap_pressed.attr,
-	&dev_attr_udfps_enabled.attr,
-	&dev_attr_udfps_pressed.attr,
 #endif
 	&dev_attr_liquid_detection_ctl.attr,
 	NULL,
 };
 
+static struct attribute *udfps_sysfs_class_attrs[] = {
+#ifdef CONFIG_BOARD_USES_DOUBLE_TAP_CTRL
+	&dev_attr_udfps_enabled.attr,
+	&dev_attr_udfps_pressed.attr,
+#endif
+	NULL,
+};
+
 static const struct attribute_group sysfs_class_group = {
         .attrs = sysfs_class_attrs,
+};
+
+static const struct attribute_group udfps_sysfs_class_group = {
+        .attrs = udfps_sysfs_class_attrs,
 };
 
 /*
@@ -1023,6 +1033,12 @@ int ts_mmi_dev_register(struct device *parent,
 	if (ret)
 		goto CLASS_DEVICE_ATTR_CREATE_FAILED;
 
+	if (touch_cdev->pdata.supported_gesture_type & TS_MMI_GESTURE_ZERO) {
+		ret = sysfs_create_group(&DEV_MMI->kobj, &udfps_sysfs_class_group);
+		if (ret)
+			goto CLASS_DEVICE_UDFPS_ATTR_CREATE_FAILED;
+	}
+
 	if (touch_cdev->mdata->extend_attribute_group) {
 		touch_cdev->mdata->extend_attribute_group(DEV_TS,
 			&touch_cdev->extern_group);
@@ -1101,6 +1117,9 @@ CLASS_DEVICE_EDGE_ATTR_CREATE_FAILED:
 	if (touch_cdev->extern_group)
 		sysfs_remove_group(&DEV_MMI->kobj, touch_cdev->extern_group);
 CLASS_DEVICE_EXT_ATTR_CREATE_FAILED:
+	if (touch_cdev->pdata.supported_gesture_type & TS_MMI_GESTURE_ZERO)
+		sysfs_remove_group(&DEV_MMI->kobj, &udfps_sysfs_class_group);
+CLASS_DEVICE_UDFPS_ATTR_CREATE_FAILED:
 	sysfs_remove_group(&DEV_MMI->kobj, &sysfs_class_group);
 CLASS_DEVICE_ATTR_CREATE_FAILED:
 	down_write(&touchscreens_list_lock);
@@ -1157,6 +1176,8 @@ void ts_mmi_dev_unregister(struct device *parent)
 	ts_mmi_sysfs_create_edge_entries(touch_cdev, false);
 	if (touch_cdev->extern_group)
 		sysfs_remove_group(&DEV_MMI->kobj, touch_cdev->extern_group);
+	if (touch_cdev->pdata.supported_gesture_type & TS_MMI_GESTURE_ZERO)
+		sysfs_remove_group(&DEV_MMI->kobj, &udfps_sysfs_class_group);
 	sysfs_remove_group(&DEV_MMI->kobj, &sysfs_class_group);
 	device_unregister(DEV_MMI);
 	DEV_MMI = NULL;
