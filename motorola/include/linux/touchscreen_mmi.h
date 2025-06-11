@@ -510,6 +510,7 @@ struct ts_mmi_dev {
 	struct pinctrl_state		*pinctrl_off_state;
 
 	atomic_t		touch_stopped;
+	bool			touch_powered;
 	enum ts_mmi_pm_mode	pm_mode;
 
 	struct delayed_work	work;
