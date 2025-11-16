@@ -1433,6 +1433,36 @@ static int brl_event_handler(struct goodix_ts_core *cd,
 	u8 event_status;
 	int ret = 0;
 
+	/* Defensive fix:
+	 * On some firmware/DT combinations we have seen ic_info.misc.touch_data_addr
+	 * becoming 0 at runtime, which causes all subsequent reads to return a
+	 * zeroed event header and every IRQ to be reported as
+	 * "Unsupported event status". Try to refresh ic_info once here instead
+	 * of operating with an invalid address.
+	 */
+	if (!misc->touch_data_addr) {
+		ts_err("touch_data_addr is 0, try to refresh ic info");
+		if (!hw_ops || !hw_ops->get_ic_info) {
+			ts_err("hw_ops/get_ic_info is NULL");
+			return -EINVAL;
+		}
+
+		ret = hw_ops->get_ic_info(cd, &cd->ic_info);
+		if (ret) {
+			ts_err("failed to refresh ic info, ret=%d", ret);
+			return ret;
+		}
+
+		misc = &cd->ic_info.misc;
+		if (!misc->touch_data_addr) {
+			ts_err("touch_data_addr still 0 after ic info refresh");
+			return -EINVAL;
+		}
+
+		ts_info("ic info refreshed: touch_data_addr=0x%04X, head_len=%d",
+			misc->touch_data_addr, misc->touch_data_head_len);
+	}
+
 	pre_read_len = IRQ_EVENT_HEAD_LEN +
 		BYTES_PER_POINT * 2 + COOR_DATA_CHECKSUM_SIZE;
 #ifdef CONFIG_GTP_GHOST_LOG_CAPTURE
