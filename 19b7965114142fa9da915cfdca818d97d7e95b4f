@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "644839d8_9c15bc63",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 19252
+      },
+      "writtenOn": "2025-11-19T15:16:30Z",
+      "side": 1,
+      "message": "Unfortunately this doesn\u0027t fix the intermittent touchscreen issues some users are reporting",
+      "revId": "19b7965114142fa9da915cfdca818d97d7e95b4f",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    }
+  ]
+}
