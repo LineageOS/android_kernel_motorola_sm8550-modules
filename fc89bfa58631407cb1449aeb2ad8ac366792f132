@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "649dc656_9c00f7da",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 19252
+      },
+      "writtenOn": "2026-08-15T21:21:37Z",
+      "side": 1,
+      "message": "This somehow breaks camera on rtwo lol",
+      "revId": "fc89bfa58631407cb1449aeb2ad8ac366792f132",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    }
+  ]
+}
